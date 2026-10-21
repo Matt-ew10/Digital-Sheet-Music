@@ -17,6 +17,14 @@ export default function Home() {
           </Link>
           <span className="text-zinc-500">: microphone pitch detection</span>
         </li>
+        <li>
+          <Link className="font-medium hover:underline" href="/score">
+            Score
+          </Link>
+          <span className="text-zinc-500">
+            : a cursor that follows the player
+          </span>
+        </li>
       </ul>
     </main>
   );
