@@ -22,23 +22,48 @@ microphone or file → AnalyserNode → 2048 samples every frame → pitchy (McL
 - The microphone is opened with echo cancellation, noise suppression, and automatic gain control off. They are designed for speech and distort instrument sound.
 - Each reading looks at 2048 samples (about 43 ms at 48 kHz). Detection needs about two periods of the lowest note; this holds nearly three periods of C2, the cello's lowest note. A longer window reaches lower notes but reacts later.
 - A reading counts as a note only if it is louder than `minVolumeDb` and clearer than `minClarity` (both in `settings.ts`). Otherwise the display shows a dash.
-- The display does not show single readings, which jump with vibrato, bow noise, and room echo. It takes the readings from the last `smoothingMs`, drops those more than 50 cents from their median (octave errors), and averages the rest in cents. With a ±30 cent vibrato at 6 Hz and 200 ms, the needle moves within ±15 cents and the note name holds; a window of whole vibrato periods (about 330 ms) steadies it further but follows note changes later.
+  - Clarity decides most misses. Low strings often read below 0.9 because their overtones are strong; 0.8 recovers most of them at the cost of more readings between notes. Going lower gains little (see the table below).
+  - Loudness cannot tell notes from gaps in URMP: frames annotated as silent are about as loud as played ones, because they are mostly releases and ringing. The volume gate only catches true silence.
+- The display does not show single readings, which jump with vibrato, bow noise, and room echo. From the readings of the last `smoothingMs`, it takes the median of the newest five as the note now sounding, drops readings more than 50 cents from it, and averages the rest in cents.
+  - A new note shows after three readings (50 ms). An earlier version used the median of the whole window and showed the previous note for about 100 ms after each change.
+  - Octave errors lasting one or two readings are outvoted. Longer ones show.
+  - With a ±30 cent vibrato at 6 Hz, the needle moves within about ±15 cents.
 - Notes are named from `referenceHz`, the A4 the ensemble tunes to. Korean orchestras often tune to 442 Hz; with 440 Hz every note would read slightly sharp.
 - The `AudioContext` is created synchronously in the click handler. Safari only lets audio start inside the user's gesture.
 
 ### Measured accuracy
 
-Measured on 2026-10-21 with `pnpm evaluate` over the URMP string tracks (violin 34, viola 13, cello 11, double bass 3; some recordings appear in two pieces), with the settings above. See [development.md](development.md#evaluation) for what each column means.
+Measured on 2026-10-21 with `pnpm evaluate` over the URMP string tracks (violin 34, viola 13, cello 11, double bass 3; some recordings appear in two pieces), with the current settings. See [development.md](development.md#evaluation) for what each column means.
 
 | Instrument  | Heard | Correct | Octave errors | Median error | Display correct | Display false alarm |
 | ----------- | ----: | ------: | ------------: | -----------: | --------------: | ------------------: |
-| Violin      | 91.7% |   89.2% |          1.4% |    0.9 cents |           75.2% |               60.0% |
-| Viola       | 77.5% |   67.8% |          6.9% |    1.3 cents |           67.9% |               70.7% |
-| Cello       | 71.8% |   64.1% |          3.1% |    1.3 cents |           66.9% |               62.7% |
-| Double bass | 85.9% |   81.1% |          3.0% |    1.0 cents |           80.8% |               60.2% |
+| Violin      | 96.2% |   92.1% |          2.1% |    0.9 cents |           83.1% |               62.7% |
+| Viola       | 87.9% |   73.2% |          9.5% |    1.4 cents |           70.9% |               80.5% |
+| Cello       | 90.2% |   76.7% |          5.5% |    1.4 cents |           72.3% |               73.4% |
+| Double bass | 95.1% |   88.4% |          3.8% |    1.1 cents |           84.8% |               61.5% |
 
-- When a reading is right, it is very precise. The losses are notes not heard at all and octave errors, both worst on viola and cello.
+How each change moved the numbers (correct readings, then display correct):
+
+| Change                              | Violin      | Viola       | Cello       |
+| ----------------------------------- | ----------- | ----------- | ----------- |
+| Start: clarity 0.9, window median   | 89.2 / 75.2 | 67.8 / 67.9 | 64.1 / 66.9 |
+| `minClarity` 0.9 → 0.8              | 92.1 / 74.9 | 73.2 / 67.8 | 76.7 / 69.1 |
+| Display anchored on newest readings | 92.1 / 83.1 | 73.2 / 70.9 | 76.7 / 72.3 |
+
+- When a reading is right, it is very precise. What remains is octave errors, worst on viola (mostly an octave too high) and cello (mostly too low).
 - The display's false alarms come from holding the last note for `smoothingMs` after it ends, including short gaps between detached notes.
+
+Tried and not kept, each measured on the same tracks:
+
+| Option                                                      | Result                                                               |
+| ----------------------------------------------------------- | -------------------------------------------------------------------- |
+| 4096-sample window                                          | No more correct readings; false alarms about three times higher      |
+| pitchy peak ratio (`clarityThreshold`) 0.95 or 0.8          | Each fixes one instrument's octave errors and adds to the other's    |
+| A louder volume gate (-45 dB or more)                       | Drops played notes as fast as it drops readings between notes        |
+| Spectral octave check (energy between and at the harmonics) | At most 0.5 points better on any instrument                          |
+| Anchoring on the newest three readings                      | 1 to 2.5 points better display, but three-reading octave errors show |
+
+Octave errors need context a single window does not have. In stage 2 the expected note is known from the score, which is the planned fix.
 
 ## Known difficulties ahead
 
