@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "evaluate": "tsx scripts/evaluate.ts"
+    "evaluate:pitch": "tsx scripts/evaluate/pitch.ts"
   },
   "dependencies": {
     "next": "16.4.2",
