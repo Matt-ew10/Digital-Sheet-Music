@@ -1,10 +1,11 @@
 import { detector, windowSize, type Reading } from "./pitch";
 
-// Reads the pitch of a source once per animation frame. Call the returned function to stop.
-// The AudioContext is created before the first await so that Safari ties it to the click.
+// Reads the pitch of a source once per animation frame, with the audio clock's time in seconds.
+// Call the returned function to stop. The AudioContext is created before the first await so
+// that Safari ties it to the click.
 export async function listen(
   open: Open,
-  onReading: (reading?: Reading) => void,
+  onReading: (reading: Reading | undefined, time: number) => void,
 ) {
   const context = new AudioContext();
   const source = await open(context);
@@ -16,7 +17,7 @@ export async function listen(
 
   function read() {
     analyser.getFloatTimeDomainData(samples);
-    onReading(detect(samples));
+    onReading(detect(samples), context.currentTime);
     frame = requestAnimationFrame(read);
   }
 

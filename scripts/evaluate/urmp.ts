@@ -1,7 +1,7 @@
 // Reads the URMP dataset and replays its recordings the way the browser reads audio.
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { detector, windowSize, type Reading } from "@/app/tuner/pitch";
+import { detector, windowSize, type Reading } from "@/app/audio/pitch";
 
 // The browser reads once per animation frame.
 export const frameRate = 60;

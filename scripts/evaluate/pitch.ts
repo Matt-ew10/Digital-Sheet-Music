@@ -1,7 +1,7 @@
 // Measures the tuner against the string tracks of the URMP dataset, whose pitch
 // annotations were corrected by hand. Usage: pnpm evaluate:pitch <URMP Dataset folder>
 import { readFile } from "node:fs/promises";
-import { steady, windowSize } from "@/app/tuner/pitch";
+import { steady, windowSize } from "@/app/audio/pitch";
 import settings from "@/settings";
 import { decode, frameRate, parse, replay, tracks } from "./urmp";
 

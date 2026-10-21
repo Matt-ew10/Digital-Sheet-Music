@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent } from "react";
+import { listen, microphone, recording } from "@/app/audio/listen";
+import { steady, type Reading } from "@/app/audio/pitch";
 import settings from "@/settings";
-import { listen, microphone, recording } from "./listen";
 import { nearest } from "./note";
-import { steady, type Reading } from "./pitch";
 
 export default function Tuner() {
   const [listening, setListening] = useState(false);
