@@ -9,7 +9,8 @@ export const windowSize = 2048;
 export function detector(sampleRate: number) {
   const pitchy = PitchDetector.forFloat32Array(windowSize);
 
-  pitchy.minVolumeDecibels = settings.minVolumeDb;
+  // pitchy's own minVolumeDecibels converts with 10^(dB/10), which is not dBFS for an amplitude.
+  pitchy.minVolumeAbsolute = 10 ** (settings.minVolumeDb / 20);
 
   return (samples: Float32Array): Reading | undefined => {
     const [hz, clarity] = pitchy.findPitch(samples, sampleRate);
