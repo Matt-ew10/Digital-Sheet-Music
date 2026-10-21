@@ -34,15 +34,19 @@ For audio changes, also run the evaluation below. Static checks cannot tell whet
 
 ## Evaluation
 
-Changes to pitch detection are judged by numbers, not by ear. `pnpm evaluate` runs the tuner's own code over recordings whose pitch is known and reports how often it is right.
+Pitch detection and score following are judged by numbers, not by ear. Two scripts run the app's own code over recordings whose notes are known and report how often it is right.
 
-The recordings come from [URMP](https://labsites.rochester.edu/air/projects/URMP.html), released under CC0: chamber music recorded one part at a time, with pitch annotations corrected by hand. Download `Dataset.tar.gz` (12 GB) from its [Zenodo record](https://zenodo.org/records/5034983) and extract it outside this repository. Do not commit the audio.
+The recordings come from [URMP](https://labsites.rochester.edu/air/projects/URMP.html), released under CC0: chamber music recorded one part at a time, with pitch and note annotations corrected by hand and a MIDI score for each piece. Download `Dataset.tar.gz` (12 GB) from its [Zenodo record](https://zenodo.org/records/5034983) and extract it outside this repository. Do not commit the audio.
+
+Both scripts read every violin, viola, cello, and double bass track and print one row per instrument. Each takes about four minutes or less.
+
+### Pitch
 
 ```sh
-pnpm evaluate ~/datasets/urmp/Dataset
+pnpm evaluate:pitch ~/datasets/urmp/Dataset
 ```
 
-It reads every violin, viola, cello, and double bass track and prints one table per instrument with two rows:
+Each instrument has two rows:
 
 - **raw**: single readings, compared with the annotated pitch at the center of each reading. This measures the detector.
 - **display**: what the tuner shows at each moment, compared with the pitch of the note being played. This includes the delay of `smoothingMs`.
@@ -57,6 +61,24 @@ It reads every violin, viola, cello, and double bass track and prints one table 
 | 90% error    | For correct readings, the distance 90% of them stay within, in cents         |
 
 Run it before and after a change to `settings.ts` or `app/tuner/pitch.ts`, and keep the change only if the numbers improve.
+
+### Score following
+
+```sh
+pnpm evaluate:follow ~/datasets/urmp/Dataset
+```
+
+The true position at each moment is the score note being played, found by matching the annotated notes to the MIDI score. The follower's cursor is compared with it 60 times a second, from the first note to the end of the last.
+
+| Column          | Meaning                                                                   |
+| --------------- | ------------------------------------------------------------------------- |
+| within one note | How often the cursor was on the right note or one away. The target is 90% |
+| exact           | How often the cursor was on the right note                                |
+| lost            | How often the cursor was more than three notes away                       |
+| median lag      | After a note starts, how long until the cursor reaches it                 |
+| 90% lag         | The lag 90% of notes stay within                                          |
+
+Run it before and after a change to `app/score/follow.ts`. It also prints each track's result, which shows where a change helps or hurts.
 
 ## Deployment
 

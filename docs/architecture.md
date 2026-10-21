@@ -65,18 +65,63 @@ Tried and not kept, each measured on the same tracks:
 
 Octave errors need context a single window does not have. In stage 2 the expected note is known from the score, which is the planned fix.
 
-## Known difficulties ahead
+## Following the score
 
-These shape stages 2 and 3 and are why recordings of real playing matter more than code.
+`app/score/follow.ts` turns pitch readings into the position of the note being played. It has no screen yet; it is developed against URMP with `pnpm evaluate:follow`.
 
-- **Legato**: a note change without a bow change has almost no change in loudness, so note boundaries must come from pitch changes, not volume.
-- **Repeated notes**: the same pitch played twice with only a bow change is the hardest boundary to find.
+```
+readings → heard notes → edit-distance alignment against the score → cursor
+```
+
+- **Heard notes.** A pitch held for 30 ms (two readings after the first) is a heard note. Note boundaries come from pitch changes, not loudness, because legato changes notes without changing loudness.
+- **Alignment.** Each heard note extends an online edit-distance alignment of everything heard so far against the score. A matching note costs 0, a note a whole octave off costs 0.5 (most octave errors are the detector's), a skipped score note costs 1, and an extra heard note costs 1. The cursor goes where the cheapest alignment ends, the nearest such place on ties.
+  - Wrong, missed, and extra notes only add cost, so the cursor keeps going and finds the player again once the following notes agree. Condition 5 depends on this: a wrong note must not stop the cursor.
+  - The cursor can move back when later notes show it went too far.
+- **Repeated notes.** The same pitch again, or an octave error on it, is a new note only after a break in the readings, or once the note has lasted 0.9 of its written length at the player's pace when the score repeats it.
+- **Pace.** The follower measures how much slower than written the player goes, from moves of up to three notes on heard notes. Moves it assumed, and long jumps (recoveries), would measure the follower instead of the player and send it running ahead, so they do not count.
+- **Overdue notes.** Fast or low passages can leave the detector with nothing usable. While sound continues, a note that has lasted 1.5 times its written length at the player's pace gives way to the next, as if its written pitch had been heard. Written rests are covered too, since a score note's length runs to the next note.
+
+### Measured accuracy
+
+Measured on 2026-10-21 with `pnpm evaluate:follow` over the URMP string tracks with a MIDI score (the same 61 tracks).
+
+| Instrument  | Within one note | Exact |  Lost | Median lag | 90% lag |
+| ----------- | --------------: | ----: | ----: | ---------: | ------: |
+| Violin      |           93.3% | 78.5% |  4.2% |      50 ms |  100 ms |
+| Viola       |           95.6% | 77.2% |  1.0% |      67 ms |  250 ms |
+| Cello       |           78.4% | 59.7% | 15.5% |      67 ms |  350 ms |
+| Double bass |           94.0% | 80.6% |  5.6% |      67 ms |  133 ms |
+| All         |           91.0% | 74.7% |  5.7% |      67 ms |  167 ms |
+
+How each step moved the share of time within one note:
+
+| Version                                                 | Violin | Viola | Cello |  All |
+| ------------------------------------------------------- | -----: | ----: | ----: | ---: |
+| Look three notes ahead, move on three matching readings |   59.5 |  65.4 |  44.8 | 58.8 |
+| Online edit distance over heard notes                   |   80.8 |  86.1 |  79.0 | 82.4 |
+| Repeats by written length, pace from heard notes        |   92.5 |  91.9 |  80.3 | 90.2 |
+| Overdue notes, pace only from heard moves               |   93.3 |  95.6 |  78.4 | 91.0 |
+
+Cello is below the target. Three tracks account for most of it:
+
+- **Spring** (4%): long repeated E3s whose readings drop out in the middle of each note. Every dropout looks like a bow change, so the cursor counts too many repeats and runs ahead.
+- **Pirates** (62%) and **Maria** (95%, but 27–62% in other versions): fast repeated low notes the detector cannot read at all, followed by timing alone.
+
+Tried and not kept, each measured on the same tracks:
+
+| Option                                                          | Result                                                                                        |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Matching the next three notes directly, without an alignment    | Once the player is more than three notes ahead, nothing matches and the cursor never recovers |
+| Matching any octave for every note ahead                        | An octave error on one note matched a note several places later and skipped there             |
+| Requiring half the written length before a repeat after a break | Spring 4 → 49%, but Pirates 62 → 27%, Maria 95 → 62%, viola 96 → 88%                          |
+| Measuring pace only when the pitch changes                      | Same trade: repeats carry most of the pace information in fast repeated passages              |
+
+The person running a session can correct the cursor by hand, so the follower does not need to be perfect.
+
+### Ahead for pitch feedback
+
 - **Vibrato**: pitch wobbles five to seven times a second, so judge a note by the median over about 0.15 to 0.2 seconds.
 - **Bow attack**: the first tens of milliseconds of a note are noisy and should not be judged.
-- **Octave errors**: low cello notes can have stronger overtones than fundamentals. Knowing the expected note from the score lets the search stay near it.
-- **Wrong notes must still advance the cursor**: condition 5 needs to show a wrong note, so tracking cannot wait for the right pitch.
-
-The person running a session can correct the cursor by hand. The tracker does not need to be perfect.
 
 ## Designs not adopted
 
