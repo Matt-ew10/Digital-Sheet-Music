@@ -19,16 +19,21 @@ export function detector(sampleRate: number) {
   };
 }
 
-// The median drops outliers such as octave errors; averaging the rest, in cents,
-// finds the center of vibrato, which the median alone swings around.
+// `hzs` runs oldest to newest. The median of the newest five readings names the note now
+// sounding, so a new note shows within three readings and octave errors shorter than that are
+// outvoted. Averaging, in cents, the readings near that note finds the center of vibrato.
 export function steady(hzs: number[]) {
-  const median = hzs.toSorted((a, b) => a - b)[Math.floor(hzs.length / 2)];
+  const anchor = median(hzs.slice(-5));
   const cents = hzs
-    .map((hz) => 1200 * Math.log2(hz / median))
+    .map((hz) => 1200 * Math.log2(hz / anchor))
     .filter((offset) => Math.abs(offset) < 50);
   const mean = cents.reduce((sum, offset) => sum + offset, 0) / cents.length;
 
-  return median * 2 ** (mean / 1200);
+  return anchor * 2 ** (mean / 1200);
+}
+
+function median(values: number[]) {
+  return values.toSorted((a, b) => a - b)[Math.floor(values.length / 2)];
 }
 
 export interface Reading {
