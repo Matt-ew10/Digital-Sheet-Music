@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "evaluate:pitch": "tsx scripts/evaluate/pitch.ts",
-    "evaluate:follow": "tsx scripts/evaluate/follow.ts"
+    "evaluate:follow": "tsx scripts/evaluate/follow.ts",
+    "urmp:musicxml": "tsx scripts/musicxml.ts"
   },
   "dependencies": {
     "next": "16.4.2",
