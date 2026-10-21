@@ -67,7 +67,7 @@ Octave errors need context a single window does not have. In stage 2 the expecte
 
 ## Following the score
 
-`app/score/follow.ts` turns pitch readings into the position of the note being played. It has no screen yet; it is developed against URMP with `pnpm evaluate:follow`.
+`app/score/follow.ts` turns pitch readings into the position of the note being played. It is developed against URMP with `pnpm evaluate:follow`, and the score page shows it on a rendered score.
 
 ```
 readings → heard notes → edit-distance alignment against the score → cursor
@@ -80,6 +80,18 @@ readings → heard notes → edit-distance alignment against the score → curso
 - **Repeated notes.** The same pitch again, or an octave error on it, is a new note only after a break in the readings, or once the note has lasted 0.9 of its written length at the player's pace when the score repeats it.
 - **Pace.** The follower measures how much slower than written the player goes, from moves of up to three notes on heard notes. Moves it assumed, and long jumps (recoveries), would measure the follower instead of the player and send it running ahead, so they do not count.
 - **Overdue notes.** Fast or low passages can leave the detector with nothing usable. While sound continues, a note that has lasted 1.5 times its written length at the player's pace gives way to the next, as if its written pitch had been heard. Written rests are covered too, since a score note's length runs to the next note.
+
+### On the page
+
+The score page draws MusicXML with OpenSheetMusicDisplay (OSMD) and moves OSMD's cursor to the follower's position.
+
+- The notes the follower needs are read by walking OSMD's own cursor through the rendered score, not by a separate MusicXML parser. Each note then knows the cursor step where it starts, so the follower's position maps straight onto the cursor. Only the first part is read.
+- Rests, grace notes, and tied continuations start no note; their time goes to the note before. A note's length is the time to the next note at the written tempo (OSMD's tempo is in quarter-note beats per minute).
+- OSMD's cursor only steps forward, so moving it back starts over from the beginning.
+- The sample score is fetched by a relative URL from the page's own folder, so it also works under GitHub Pages' repository path without the base path.
+- The follower is given the audio clock's time with each reading, not a reading count, since screens refresh at different rates.
+
+A synthetic performance of the sample (played at ♩ = 85 against the written 100, with vibrato, a legato repeat, and one wrong note) stayed within one note the whole time and on the exact note 91% of the time. The cursor waits on the note before a wrong one and moves on at the next correct note. Pitch feedback (condition 5) will need it to land on the wrong note instead.
 
 ### Measured accuracy
 
