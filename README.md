@@ -47,6 +47,16 @@ Open http://localhost:3000. Browsers allow the microphone only on `localhost` or
 
 To try either page without an instrument, choose **Play a recording** and pick an audio file. It is analyzed exactly like the microphone, so a recording of a passage is the easiest way to repeat the same test. The score page opens with a short sample (`public/score/sample.musicxml`); **Open MusicXML** loads any other `.musicxml` or `.mxl` file, whose first part is followed.
 
+### With real recordings
+
+The [URMP](https://labsites.rochester.edu/air/projects/URMP.html) dataset (CC0) has string parts recorded one at a time, each with its score. Download and extract it as described in [development.md](docs/development.md#evaluation), then write a MusicXML score next to every string part:
+
+```sh
+pnpm urmp:musicxml ~/datasets/urmp/Dataset
+```
+
+On the score page, open `Sco_<part>.musicxml` from a piece's folder with **Open MusicXML**, then play the matching `AuSep_<part>.wav` with **Play a recording**. The cursor follows the recording as it plays. Jupiter (violin or cello), Sonata (either violin), Hark (viola), and King (viola) follow cleanly; Spring's cello is the hardest case.
+
 ## Constraints
 
 - Only one note at a time. Double stops, chords, and piano are out of scope for now.
