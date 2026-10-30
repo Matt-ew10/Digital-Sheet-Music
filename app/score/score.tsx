@@ -69,7 +69,7 @@ export default function Score() {
         await import("opensheetmusicdisplay"));
       const osmd = (osmdRef.current ??= new library.OpenSheetMusicDisplay(
         containerRef.current!,
-        { autoResize: true, followCursor: true },
+        { autoResize: true, followCursor: true, autoBeam: true },
       ));
 
       await osmd.load(content);
