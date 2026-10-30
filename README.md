@@ -47,6 +47,12 @@ Open http://localhost:3000. Browsers allow the microphone only on `localhost` or
 
 To try either page without an instrument, choose **Play a recording** and pick an audio file. It is analyzed exactly like the microphone, so a recording of a passage is the easiest way to repeat the same test. The score page opens with a short sample (`public/score/sample.musicxml`); **Open MusicXML** loads any other `.musicxml` or `.mxl` file, whose first part is followed.
 
+On the score page, the person running a session:
+
+- picks one of the experiment's conditions (1 to 4; pitch feedback is not built yet). Colors for high contrast and spacing for the simplified layout are in `settings.ts`.
+- clicks a note before playing to start from its measure, for practicing part of a passage.
+- clicks a note while listening, or uses ◀ ▶ or the arrow keys, to put the cursor back on the player when it goes astray.
+
 ### With real recordings
 
 The [URMP](https://labsites.rochester.edu/air/projects/URMP.html) dataset (CC0) has string parts recorded one at a time, each with its score. Download and extract it as described in [development.md](docs/development.md#evaluation), then write a MusicXML score next to every string part:
