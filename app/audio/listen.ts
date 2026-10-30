@@ -8,6 +8,10 @@ export async function listen(
   onReading: (reading: Reading | undefined, time: number) => void,
 ) {
   const context = new AudioContext();
+
+  // Safari may create it suspended when the click was on a file picker rather than a button.
+  void context.resume();
+
   const source = await open(context);
   const analyser = new AnalyserNode(context, { fftSize: windowSize });
   const detect = detector(context.sampleRate);
