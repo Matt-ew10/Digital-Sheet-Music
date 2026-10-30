@@ -1,7 +1,8 @@
 import settings from "@/settings";
 
-// Follows a player through `score`, one pitch reading at a time, and returns the position of
-// the note being played (-1 before the first).
+// Follows a player through `score`. `read` takes one pitch reading at a time and returns the
+// position of the note being played (-1 before the first); `seek` puts the player somewhere by
+// hand.
 //
 // Readings become heard notes: a pitch held for `confirmSeconds`. Each heard note extends an
 // edit-distance alignment of everything heard so far against the score, and the cursor goes to
@@ -20,13 +21,15 @@ export function follower(score: Note[]) {
   let last: number | undefined;
   let broken = false;
 
-  // When a note was last heard or assumed, where and when the cursor last moved on a heard
-  // note, and how much slower than written the player is going.
-  let heard = 0;
+  // When a note was last heard or assumed (none yet, or since a seek), where and when the cursor
+  // last moved on a heard note, and how much slower than written the player is going.
+  let heard: number | undefined;
   let anchor = { position: -1, time: 0 };
   let pace = 1;
 
-  return (time: number, hz?: number) => {
+  return { read, seek };
+
+  function read(time: number, hz?: number) {
     if (hz === undefined) {
       held = undefined;
       broken = true;
@@ -39,7 +42,12 @@ export function follower(score: Note[]) {
     const current = score[position];
     const next = score[position + 1];
 
-    if (current && next && time - heard > current.seconds * pace * overdue) {
+    if (
+      current &&
+      next &&
+      heard !== undefined &&
+      time - heard > current.seconds * pace * overdue
+    ) {
       hear(next.pitches[0], time, false);
     }
 
@@ -70,7 +78,19 @@ export function follower(score: Note[]) {
     hear(pitch, time, !timed);
 
     return position;
-  };
+  }
+
+  // The person running the session says the player is at `to`, and the alignment starts over
+  // from there: notes further away cost one skip each, so the next heard notes match near `to`.
+  function seek(to: number) {
+    cost = cost.map((_, k) => Math.abs(k - 1 - to) * skip);
+    position = to;
+    held = undefined;
+    last = undefined;
+    broken = true;
+    heard = undefined;
+    anchor = { position: -1, time: 0 };
+  }
 
   // Whether the current note has been held past its written length, at the player's pace,
   // while the next note repeats it.
@@ -79,6 +99,7 @@ export function follower(score: Note[]) {
     const next = score[position + 1];
 
     if (!current || !next || !same(current.pitches, next.pitches)) return false;
+    if (heard === undefined) return false;
     return time - heard > current.seconds * pace * repeatAfter;
   }
 

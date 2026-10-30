@@ -52,7 +52,7 @@ function evaluate(
   const truth = align(score, played);
   const follow = follower(score);
   const cursor = readings.map((reading, frame) =>
-    follow(frame / frameRate, reading?.hz),
+    follow.read(frame / frameRate, reading?.hz),
   );
   const result = new Score();
   const [first] = played[0];

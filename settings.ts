@@ -15,6 +15,14 @@ const settings = {
   // The display summarizes readings from this many milliseconds. Longer is steadier
   // but slower to follow a new note. Vibrato needs about 150 to 200.
   smoothingMs: 200,
+
+  // Condition 3, high contrast: colors of the notation and the page. The research plan asks for
+  // more contrast with the same layout and size; how much more is the research team's call.
+  contrast: { notation: "#ffffff", page: "#000000" },
+
+  // Condition 4, simplified layout: how many times wider notes are spaced, how many measures go
+  // on a line, and how many times further apart the lines are.
+  spacing: { notes: 1.8, measuresPerLine: 2, lines: 2 },
 };
 
 export default settings;
