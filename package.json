@@ -9,6 +9,8 @@
     "lint": "eslint",
     "evaluate:pitch": "tsx scripts/evaluate/pitch.ts",
     "evaluate:follow": "tsx scripts/evaluate/follow.ts",
+    "evaluate:label": "tsx scripts/evaluate/label.ts",
+    "evaluate:student": "tsx scripts/evaluate/student.ts",
     "urmp:musicxml": "tsx scripts/musicxml.ts"
   },
   "dependencies": {

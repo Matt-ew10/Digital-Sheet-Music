@@ -1,158 +1,332 @@
-import settings from "@/settings";
-
-// Follows a player through `score`. `read` takes one pitch reading at a time and returns the
-// position of the note being played (-1 before the first); `seek` puts the player somewhere by
-// hand.
+// Follows a player tuned to `referenceHz` (A4) through `score`. `read` takes one pitch reading
+// at a time and returns the position of the note being played (-1 before the first); `seek`
+// puts the player on a note by hand, and `wait` says which note they will start from.
+// `restarts` are the positions playing may start again from, such as the first note of each
+// measure.
 //
-// Readings become heard notes: a pitch held for `confirmSeconds`. Each heard note extends an
-// edit-distance alignment of everything heard so far against the score, and the cursor goes to
-// where the cheapest alignment ends. Wrong, missed, and extra notes only add cost, so the
-// cursor finds the player again once the notes that follow agree.
-export function follower(score: Note[]) {
+// It keeps, for every score note and every length of time the player may have spent on it so
+// far, how likely that is (an explicit-duration hidden Markov model). Each reading moves the
+// odds forward in time, then weighs them by how well the reading fits each note:
+//
+// - Time: a note is likely to end around its written length at the player's pace, so moving on
+//   becomes likely then, and a note held much longer or shorter is unlikely.
+// - Pitch: the written pitch fits best, the same pitch an octave off (a common detector error)
+//   less, a semitone off less again, anything else hardly at all. Silence fits every note. A
+//   short silence is part of the note; a pause stops the clock, so a player who stops is still
+//   on the same note.
+// - Jumps: a note may be skipped, and after a pause the player may start again at any restart
+//   position up to where they were.
+//
+// The cursor goes to the most likely note. A wrong note does not stop it: time moves the odds
+// on, so the cursor reaches the note the player got wrong, which condition 5 needs.
+export function follower(score: Note[], referenceHz: number, restarts: number[] = [0]) {
   const pitches = score.flatMap((note) => note.pitches);
   const lowest = Math.min(...pitches) - 13;
   const highest = Math.max(...pitches) + 13;
 
-  // cost[k]: the cheapest alignment of the heard notes so far that ends at score position k - 1.
-  let cost = score.map((_, k) => k * skip).concat(score.length * skip);
+  // odds[j][d]: on note j, with d steps of sound spent on it. The last slot holds everything
+  // longer. waiting: not started yet; the player will start at `start`.
+  const odds = score.map((note) =>
+    new Float64Array(Math.ceil((note.seconds * slowest * stretch) / step) + 2),
+  );
+  const totals = new Float64Array(score.length);
+  let hazards: Float64Array[] = [];
+  let hazardPace = 0;
+  let waiting = 1;
+  let start = 0;
+
   let position = -1;
-  let held: number | undefined;
-  let since = 0;
-  let last: number | undefined;
-  let broken = false;
-
-  // When a note was last heard or assumed (none yet, or since a seek), where and when the cursor
-  // last moved on a heard note, and how much slower than written the player is going.
-  let heard: number | undefined;
-  let anchor = { position: -1, time: 0 };
   let pace = 1;
+  let last: number | undefined;
+  let silence = 0;
+  let sounding = 0;
 
-  return { read, seek };
+  return { read, seek, wait };
 
   function read(time: number, hz?: number) {
-    if (hz === undefined) {
-      held = undefined;
-      broken = true;
-      return position;
+    if (last === undefined) last = time;
+
+    // Readings come once per screen refresh; the model moves in fixed steps.
+    while (time - last >= step) {
+      last += step;
+      advance(hz);
     }
-
-    // Fast or low passages can leave the detector with nothing usable while the player keeps
-    // going. While there is sound, a note held far past its written length gives way to the
-    // next, as if its written pitch had been heard.
-    const current = score[position];
-    const next = score[position + 1];
-
-    if (
-      current &&
-      next &&
-      heard !== undefined &&
-      time - heard > current.seconds * pace * overdue
-    ) {
-      hear(next.pitches[0], time, false);
-    }
-
-    const midi = 69 + 12 * Math.log2(hz / settings.referenceHz);
-    const pitch = Math.round(midi);
-
-    // Far outside the score's range: noise, not a note or a break.
-    if (midi < lowest || midi > highest) return position;
-
-    if (pitch !== held) {
-      held = pitch;
-      since = time;
-    }
-
-    if (time - since < confirmSeconds) return position;
-
-    // The same note again, or an octave error on it, is only a new note after a break, or once
-    // it has outlasted its written length when the score repeats it.
-    const again = last !== undefined && (pitch - last) % 12 === 0;
-
-    if (again && !broken && !outlasted(time)) return position;
-
-    // A repeat inferred from timing must not measure the pace it was inferred from.
-    const timed = again && !broken;
-
-    last = pitch;
-    broken = false;
-    hear(pitch, time, !timed);
 
     return position;
   }
 
-  // The person running the session says the player is at `to`, and the alignment starts over
-  // from there: notes further away cost one skip each, so the next heard notes match near `to`.
+  // The person running the session says the player is on note `to`.
   function seek(to: number) {
-    cost = cost.map((_, k) => Math.abs(k - 1 - to) * skip);
+    clear();
+    odds[to][0] = 1;
+    totals[to] = 1;
     position = to;
-    held = undefined;
-    last = undefined;
-    broken = true;
-    heard = undefined;
-    anchor = { position: -1, time: 0 };
   }
 
-  // Whether the current note has been held past its written length, at the player's pace,
-  // while the next note repeats it.
-  function outlasted(time: number) {
-    const current = score[position];
-    const next = score[position + 1];
-
-    if (!current || !next || !same(current.pitches, next.pitches)) return false;
-    if (heard === undefined) return false;
-    return time - heard > current.seconds * pace * repeatAfter;
+  // The player has not started, and will start at note `from`.
+  function wait(from: number) {
+    clear();
+    waiting = 1;
+    start = from;
+    position = from - 1;
   }
 
-  function hear(pitch: number, time: number, measure: boolean) {
-    const next = [cost[0] + extra];
+  function clear() {
+    for (const slots of odds) slots.fill(0);
+    totals.fill(0);
+    waiting = 0;
+    sounding = 0;
+  }
 
-    heard = time;
+  function advance(hz?: number) {
+    const midi =
+      hz === undefined ? undefined : 69 + 12 * Math.log2(hz / referenceHz);
+    const heard =
+      midi === undefined || midi < lowest || midi > highest
+        ? undefined
+        : Math.round(midi);
 
-    for (let k = 1; k <= score.length; k++) {
-      next[k] = Math.min(
-        cost[k - 1] + mismatch(score[k - 1].pitches, pitch),
-        cost[k] + extra,
-        next[k - 1] + skip,
-      );
+    // A short silence is part of the note, as between detached notes, so time goes on. A pause
+    // stops the clock: a player who stops is still on the same note.
+    if (heard === undefined) {
+      silence += step;
+
+      if (silence < pause) {
+        rate();
+        move(false, false);
+      }
+      return;
     }
 
-    cost = next;
+    const broken = silence >= 2 * step;
+    const resumed = silence >= pause;
 
-    let best = 0;
-
-    for (let k = 1; k <= score.length; k++) {
-      const closer = Math.abs(k - 1 - position) < Math.abs(best - 1 - position);
-
-      if (cost[k] < cost[best] || (cost[k] === cost[best] && closer)) best = k;
-    }
-
-    move(best - 1, time, measure);
+    silence = 0;
+    rate();
+    move(broken, resumed);
+    weigh(heard);
+    choose();
   }
 
-  // The pace is measured only between moves on heard notes, a few notes apart; assumed notes
-  // and longer jumps (recoveries) would measure the follower instead of the player.
-  function move(to: number, time: number, measure: boolean) {
-    if (to === position) return;
+  // Time passes on every note: odds move one slot later, and some leave for the next note.
+  // Sound after a break is likely a new stroke, and after a pause possibly a restart.
+  function move(broken: boolean, resumed: boolean) {
+    const entering = new Float64Array(score.length + 1);
 
-    position = to;
-    if (!measure) return;
+    for (let j = 0; j < score.length; j++) {
+      // Totals are refreshed when a reading is weighed, so during a short silence a note just
+      // entered still counts as empty and its odds wait in their first slot until sound returns.
+      if (totals[j] < tiny) continue;
 
-    const steps = to - anchor.position;
+      const slots = odds[j];
+      const hazard = hazards[j];
+      const end = slots.length - 1;
+      let leaving = 0;
 
-    if (anchor.position >= 0 && steps > 0 && steps <= 3) {
-      const written = score
-        .slice(anchor.position, to)
-        .reduce((sum, note) => sum + note.seconds, 0);
-      const measured = (time - anchor.time) / written;
+      for (let d = 0; d <= end; d++) {
+        // A new stroke often starts the next note, even a repeated one, once the note has
+        // lasted its shortest.
+        const leave = broken && hazard[d] > 0 ? Math.max(hazard[d], afterBreak) : hazard[d];
 
-      if (written > 0) {
-        pace += (Math.min(Math.max(measured, pace / 2), pace * 2) - pace) * 0.3;
+        leaving += slots[d] * leave;
+        slots[d] *= 1 - leave;
+      }
+
+      slots[end] += slots[end - 1];
+      for (let d = end - 1; d > 0; d--) slots[d] = slots[d - 1];
+      slots[0] = 0;
+
+      if (j + 1 < score.length) {
+        entering[j + 1] += leaving * (1 - skipped);
+        entering[Math.min(j + 2, score.length - 1)] += leaving * skipped;
+      } else {
+        slots[end] += leaving;
       }
     }
 
-    anchor = { position: to, time };
+    entering[start] += waiting * begin;
+    waiting *= 1 - begin;
+
+    // After a pause, the player may go back to a restart position up to where they were, most
+    // likely one of the last few. The beginning is as likely as two back.
+    if (resumed) {
+      const back = restarts.filter((at) => at <= Math.max(position, 0));
+      const likely = back.map((at, index) =>
+        at === 0 && back.length > 1 ? 0.25 : 2 ** (index - back.length + 1) + 0.05,
+      );
+      const sum = likely.reduce((total, value) => total + value, 0);
+      let moved = 0;
+
+      for (let j = 0; j < score.length; j++) {
+        moved += totals[j] * restart;
+        odds[j].forEach((value, d) => (odds[j][d] = value * (1 - restart)));
+      }
+
+      back.forEach((at, index) => (entering[at] += (moved * likely[index]) / sum));
+    }
+
+    for (let j = 0; j < score.length; j++) odds[j][0] += entering[j];
+  }
+
+  function weigh(heard: number) {
+    let sum = waiting * notStarted;
+
+    waiting *= notStarted;
+
+    for (let j = 0; j < score.length; j++) {
+      const slots = odds[j];
+      const fit = fits(score[j].pitches, heard);
+      let total = 0;
+
+      for (let d = 0; d < slots.length; d++) {
+        slots[d] *= fit;
+        total += slots[d];
+      }
+
+      totals[j] = total;
+      sum += total;
+    }
+
+    waiting /= sum;
+
+    for (let j = 0; j < score.length; j++) {
+      if (totals[j] === 0) continue;
+
+      const slots = odds[j];
+
+      for (let d = 0; d < slots.length; d++) slots[d] /= sum;
+      totals[j] /= sum;
+    }
+  }
+
+  // The cursor goes to the most likely note. Moving on to the next one measures the pace: how
+  // much longer than written the player held the note they left.
+  function choose() {
+    let best = -1;
+    let most = waiting;
+
+    for (let j = 0; j < score.length; j++) {
+      if (totals[j] > most) {
+        most = totals[j];
+        best = j;
+      }
+    }
+
+    sounding += step;
+
+    if (best === position) return;
+
+    // Repeated notes are left out: the model's own timing decides when they change, so they
+    // would measure the model instead of the player.
+    if (
+      best === position + 1 &&
+      position >= 0 &&
+      !score[best].pitches.some((pitch) => score[position].pitches.includes(pitch))
+    ) {
+      const measured = sounding / score[position].seconds;
+
+      pace += (Math.min(Math.max(measured, pace / 2), pace * 2) - pace) * 0.3;
+      pace = Math.min(Math.max(pace, fastest), slowest);
+    }
+
+    position = best;
+    sounding = 0;
+  }
+
+  // How likely a note held for d steps is to end at the next step: from a log-normal spread of
+  // lengths around the written length at the player's pace. Recomputed when the pace changes.
+  function rate() {
+    if (Math.abs(pace - hazardPace) < hazardPace * 0.03) return;
+
+    hazardPace = pace;
+    hazards = score.map((note, j) => {
+      const expected = Math.log(note.seconds * pace);
+      const lasting = (seconds: number) =>
+        seconds <= 0 ? 1 : 0.5 * erfc((Math.log(seconds) - expected) / (spread * Math.SQRT2));
+
+      // No note is over before a share of its length: otherwise the odds could run through
+      // several notes in as many steps, toward a later passage with the same pitches.
+      const shortest = Math.max(2 * step, note.seconds * pace * briefest);
+
+      return Float64Array.from(odds[j], (_, d) => {
+        if (d * step < shortest) return 0;
+
+        const now = lasting(d * step);
+        const later = lasting((d + 1) * step);
+
+        return Math.max(now > 0 ? 1 - later / now : 1, least);
+      });
+    });
   }
 }
+
+function fits(written: number[], heard: number) {
+  if (written.includes(heard)) return 1;
+  if (written.some((pitch) => (heard - pitch) % 12 === 0)) return octave;
+  if (written.some((pitch) => Math.abs(heard - pitch) === 1)) return semitone;
+  return other;
+}
+
+// The complementary error function, to within 1.2e-7 (Numerical Recipes' erfcc).
+function erfc(x: number) {
+  const z = Math.abs(x);
+  const t = 1 / (1 + 0.5 * z);
+  const r =
+    t *
+    Math.exp(
+      -z * z -
+        1.26551223 +
+        t *
+          (1.00002368 +
+            t *
+              (0.37409196 +
+                t *
+                  (0.09678418 +
+                    t *
+                      (-0.18628806 +
+                        t *
+                          (0.27886807 +
+                            t *
+                              (-1.13520398 +
+                                t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))),
+    );
+
+  return x >= 0 ? r : 2 - r;
+}
+
+// The model moves in steps of this many seconds.
+const step = 1 / 60;
+// How well a reading fits a written note. Readings a sixtieth of a second apart mostly repeat
+// each other, so each counts for a quarter of a whole observation (the fourth root).
+const weight = 0.25;
+const octave = 0.3 ** weight;
+const semitone = 0.15 ** weight;
+const other = 0.03 ** weight;
+// How well a reading fits not having started, as a whole value: worse than any note, so that
+// once playing has started, a wrong note never sends the cursor back before the first note.
+const notStarted = 0.01;
+// The spread of a note's played length around its written length (log scale), and the
+// smallest chance at any step that the note ends, so a clear next note can always win.
+const spread = 0.4;
+const least = 0.01;
+// The shortest a note is held, as a share of its written length at the player's pace.
+const briefest = 0.3;
+// Pace bounds, as multiples of the written length, and how far past its written length a note
+// is tracked before its time slots run out.
+const fastest = 0.5;
+const slowest = 3;
+const stretch = 3;
+// Chances, at a step: that a note was skipped when the player moves on; that the player starts
+// playing when waiting; that a note ends when sound resumes after a break; that the player went
+// back to a restart position after a pause.
+const skipped = 0.05;
+const begin = 0.2;
+const afterBreak = 0.2;
+const restart = 0.05;
+// Silence this long is a pause.
+const pause = 0.5;
+// Odds this small are not worth updating.
+const tiny = 1e-12;
 
 // A score position: the MIDI pitches written there (more than one for a double stop), and the
 // time until the next position at the written tempo.
@@ -160,23 +334,3 @@ export interface Note {
   pitches: number[];
   seconds: number;
 }
-
-function mismatch(pitches: number[], pitch: number) {
-  if (pitches.includes(pitch)) return 0;
-  if (pitches.some((written) => (pitch - written) % 12 === 0)) return octave;
-  return 1;
-}
-
-function same(a: number[], b: number[]) {
-  return a.length === b.length && a.every((pitch, i) => pitch === b[i]);
-}
-
-// A heard note that is a whole octave off the written one is most likely a detector error.
-const octave = 0.5;
-const skip = 1;
-const extra = 1;
-const confirmSeconds = 0.03;
-// How far past its written length a note must be held before a repeat of it counts as heard.
-const repeatAfter = 0.9;
-// How far past its written length the cursor waits for evidence before moving on anyway.
-const overdue = 1.5;

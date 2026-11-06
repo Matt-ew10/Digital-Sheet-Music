@@ -28,7 +28,7 @@ microphone or file → AnalyserNode → 2048 samples every frame → pitchy (McL
   - A new note shows after three readings (50 ms). An earlier version used the median of the whole window and showed the previous note for about 100 ms after each change.
   - Octave errors lasting one or two readings are outvoted. Longer ones show.
   - With a ±30 cent vibrato at 6 Hz, the needle moves within about ±15 cents.
-- Notes are named from `referenceHz`, the A4 the ensemble tunes to. Korean orchestras often tune to 442 Hz; with 440 Hz every note would read slightly sharp.
+- Notes are named from the A4 the player tuned to, picked on the tuner and score pages from `referenceChoices` and remembered on the device (`app/audio/reference.tsx`). Participants tune to 442 Hz before the experiment, but the student's practice recordings were made at 440 Hz. With the wrong choice every note reads 8 cents off, more than half of condition 5's 15-cent tolerance. The follower rounds to semitones, so following is not affected. The URMP evaluation always uses 440 Hz, which URMP is tuned to.
 - The `AudioContext` is created synchronously in the click handler. Safari only lets audio start inside the user's gesture.
 
 ### Measured accuracy
@@ -63,23 +63,27 @@ Tried and not kept, each measured on the same tracks:
 | Spectral octave check (energy between and at the harmonics) | At most 0.5 points better on any instrument                          |
 | Anchoring on the newest three readings                      | 1 to 2.5 points better display, but three-reading octave errors show |
 
-Octave errors need context a single window does not have. In stage 2 the expected note is known from the score, which is the planned fix.
+Octave errors need context a single window does not have. The score follower has it: it knows the expected note and counts an octave error as a weaker match, not a different note.
 
 ## Following the score
 
-`app/score/follow.ts` turns pitch readings into the position of the note being played. It is developed against URMP with `pnpm evaluate:follow`, and the score page shows it on a rendered score.
+`app/score/follow.ts` turns pitch readings into the position of the note being played. It is developed against URMP with `pnpm evaluate:follow` and the student's recordings with `pnpm evaluate:student`, and the score page shows it on a rendered score.
 
 ```
-readings → heard notes → edit-distance alignment against the score → cursor
+readings → odds over (score note, time spent on it) → most likely note → cursor
 ```
 
-- **Heard notes.** A pitch held for 30 ms (two readings after the first) is a heard note. Note boundaries come from pitch changes, not loudness, because legato changes notes without changing loudness.
-- **Alignment.** Each heard note extends an online edit-distance alignment of everything heard so far against the score. A matching note costs 0, a note a whole octave off costs 0.5 (most octave errors are the detector's), a skipped score note costs 1, and an extra heard note costs 1. The cursor goes where the cheapest alignment ends, the nearest such place on ties.
-  - Wrong, missed, and extra notes only add cost, so the cursor keeps going and finds the player again once the following notes agree. Condition 5 depends on this: a wrong note must not stop the cursor.
-  - The cursor can move back when later notes show it went too far.
-- **Repeated notes.** The same pitch again, or an octave error on it, is a new note only after a break in the readings, or once the note has lasted 0.9 of its written length at the player's pace when the score repeats it.
-- **Pace.** The follower measures how much slower than written the player goes, from moves of up to three notes on heard notes. Moves it assumed, and long jumps (recoveries), would measure the follower instead of the player and send it running ahead, so they do not count.
-- **Overdue notes.** Fast or low passages can leave the detector with nothing usable. While sound continues, a note that has lasted 1.5 times its written length at the player's pace gives way to the next, as if its written pitch had been heard. Written rests are covered too, since a score note's length runs to the next note.
+The follower keeps, for every score note and every length of time the player may have spent on it so far, how likely that is (an explicit-duration hidden Markov model). Pitch, time, and jumps are weighed in one place instead of by separate rules:
+
+- **Time.** Every sixtieth of a second, the odds move one slot later. A note is likely to end around its written length at the player's pace (a log-normal spread), never before 30% of it, so the odds cannot run through several short notes toward a later passage with the same pitches.
+- **Pitch.** Each reading weighs the odds by how well it fits each note: the written pitch 1, an octave off 0.3 (mostly detector errors), a semitone off 0.15, anything else 0.03. Readings a sixtieth of a second apart mostly repeat each other, so each counts for a quarter of an observation (the fourth root of those numbers). Without that, a sustained wrong note let a far-off note with the right pitch take over within a second.
+- **Silence.** A short silence is part of the note, as between detached notes, so time goes on. Sound after a break is likely a new stroke, so the note may end then (chance 0.2), which counts repeated notes. A pause of half a second or more stops the clock: a player who stops is still on the same note.
+- **Jumps.** Moving on skips a note with chance 0.05 (a player's mistake). After a pause, the player may go back to the first note of a measure (chance 0.05), most likely one of the last few measures; the beginning of the piece counts as much as two measures back.
+- **Pace.** Moving on to the next note measures how much slower than written the player went. Repeated notes do not count: the model's own timing decides when they change, so they would measure the model.
+
+The cursor goes to the most likely note. A wrong note does not stop it: time moves the odds on, so the cursor keeps up with the player. It does not reliably stay on the wrong note, though (see below), which condition 5 will need.
+
+The odds are kept for each note up to nine times its written length (pace at most three times slower, then three times longer). A score of 150 notes is about 20,000 numbers updated 60 times a second.
 
 ### On the page
 
@@ -87,49 +91,68 @@ The score page draws MusicXML with OpenSheetMusicDisplay (OSMD) and moves OSMD's
 
 - The notes the follower needs are read by walking OSMD's own cursor through the rendered score, not by a separate MusicXML parser. Each note then knows the cursor step where it starts, so the follower's position maps straight onto the cursor. Only the first part is read.
 - Rests, grace notes, and tied continuations start no note; their time goes to the note before. A note's length is the time to the next note at the written tempo (OSMD's tempo is in quarter-note beats per minute).
+- The first note of every measure is a restart position. A repeat sign also starts a new measure position, so the second time through has its own.
 - OSMD's cursor only steps forward, so moving it back starts over from the beginning.
 - The sample score is fetched by a relative URL from the page's own folder, so it also works under GitHub Pages' repository path without the base path.
-- The follower is given the audio clock's time with each reading, not a reading count, since screens refresh at different rates.
-- The follower reads once per animation frame, so a hidden page or a backgrounded tab (which browsers throttle to about one frame a second) stops it. The page must stay on screen during a session.
-- **Corrections.** `seek` puts the player at a note by hand, for starting partway through or for fixing the cursor. It restarts the alignment so every other note costs one skip per note of distance, which makes the next heard notes match near the chosen one, and it forgets the last heard note and the pace anchor so nothing measured before the jump carries over. Started from note 16 of the sample, a synthetic performance reached each note about 30 ms after it began.
+- The follower is given the audio clock's time with each reading, not a reading count, since screens refresh at different rates. It moves in fixed steps of a sixtieth of a second, so a 120 Hz screen gives it the same steps.
+- The follower reads once per animation frame, so a hidden page or a backgrounded tab (which browsers throttle or stop) stops it. The page must stay on screen during a session.
+- **Corrections.** `wait` says which note playing starts from; `seek` puts the player on a note while they play. Both forget the odds elsewhere.
 - **Conditions.** Each condition is a set of switches: whether the cursor shows, high-contrast colors, and simplified spacing (`app/score/conditions.ts`). Switching re-renders the score from OSMD's default engraving rules, so nothing from the previous condition carries over. Simplified spacing widens note spacing, fixes the measures per line, and spreads the lines apart; high contrast only changes colors, so the layout matches the standard score as the research plan requires. Black on white is already the highest possible contrast, so condition 3 defaults to white on black; the research team should confirm what "higher contrast" means.
-
-A synthetic performance of the sample (played at ♩ = 85 against the written 100, with vibrato, a legato repeat, and one wrong note) stayed within one note the whole time and on the exact note 91% of the time. The cursor waits on the note before a wrong one and moves on at the next correct note. Pitch feedback (condition 5) will need it to land on the wrong note instead.
 
 ### Measured accuracy
 
-Measured on 2026-10-21 with `pnpm evaluate:follow` over the URMP string tracks with a MIDI score (the same 61 tracks).
+Measured on 2026-11-06 with `pnpm evaluate:follow` over the URMP string tracks with a MIDI score (the same 61 tracks), with a restart position at every measure as on the score page. In parentheses is the previous follower (edit distance over heard notes) in its last, uncommitted version, with one overdue note at a time; the committed version before it measured 91.0% overall.
 
-| Instrument  | Within one note | Exact |  Lost | Median lag | 90% lag |
-| ----------- | --------------: | ----: | ----: | ---------: | ------: |
-| Violin      |           93.3% | 78.5% |  4.2% |      50 ms |  100 ms |
-| Viola       |           95.6% | 77.2% |  1.0% |      67 ms |  250 ms |
-| Cello       |           78.4% | 59.7% | 15.5% |      67 ms |  350 ms |
-| Double bass |           94.0% | 80.6% |  5.6% |      67 ms |  133 ms |
-| All         |           91.0% | 74.7% |  5.7% |      67 ms |  167 ms |
+| Instrument  | Within one note |         Exact |         Lost | 90% lag |
+| ----------- | --------------: | ------------: | -----------: | ------: |
+| Violin      |   94.1% (93.4%) | 83.6% (78.3%) |  3.8% (3.9%) |   83 ms |
+| Viola       |   96.2% (95.3%) | 81.9% (77.0%) |  1.5% (1.3%) |  133 ms |
+| Cello       |   90.2% (81.0%) | 74.6% (61.0%) |  4.3% (12.4%) |  167 ms |
+| Double bass |   99.9% (94.0%) | 90.4% (80.6%) |  0.0% (5.6%) |  100 ms |
+| All         |   94.1% (91.5%) | 81.8% (74.8%) |  3.2% (5.0%) |  100 ms |
 
-How each step moved the share of time within one note:
+URMP is played straight through, so restarts can only hurt there: without them the follower reaches 95.1% overall and 97.4% on viola. Allowing them costs about one point.
 
-| Version                                                 | Violin | Viola | Cello |  All |
-| ------------------------------------------------------- | -----: | ----: | ----: | ---: |
-| Look three notes ahead, move on three matching readings |   59.5 |  65.4 |  44.8 | 58.8 |
-| Online edit distance over heard notes                   |   80.8 |  86.1 |  79.0 | 82.4 |
-| Repeats by written length, pace from heard notes        |   92.5 |  91.9 |  80.3 | 90.2 |
-| Overdue notes, pace only from heard moves               |   93.3 |  95.6 |  78.4 | 91.0 |
+The student's recordings, measured with `pnpm evaluate:student` over the 8 viola takes played correctly, against labels made by `pnpm evaluate:label` (see [development.md](development.md#the-students-recordings)). The labels come from the same detector, so "as recorded" is an upper bound.
 
-Cello is below the target. Three tracks account for most of it:
+| Condition                     | Within one note |         Exact |          Lost | 90% lag |
+| ----------------------------- | --------------: | ------------: | ------------: | ------: |
+| As recorded                   |   99.8% (98.5%) | 88.8% (80.3%) |   0.0% (0.2%) |   67 ms |
+| Mistakes (about 1 note in 8)  |   95.6% (90.8%) | 82.8% (70.6%) |   0.6% (1.3%) |   83 ms |
+| Restarts (3 per take)         |   97.6% (56.1%) | 87.9% (45.9%) |  2.0% (40.1%) |   67 ms |
+| Noise 20 dB below             |   99.8% (98.4%) | 88.0% (78.9%) |   0.0% (0.4%) |   83 ms |
+| Noise 10 dB below             |   85.9% (62.6%) | 51.3% (38.9%) |  3.4% (27.1%) |  617 ms |
+| Room                          |   99.6% (97.0%) | 85.7% (74.9%) |   0.1% (0.1%) |  100 ms |
+| Another player 10 dB below    |   97.0% (93.7%) | 81.4% (68.6%) |   0.7% (1.1%) |  100 ms |
+| Tuned to 442                  |   99.8% (97.5%) | 89.7% (80.0%) |   0.0% (0.6%) |   67 ms |
 
-- **Spring** (4%): long repeated E3s whose readings drop out in the middle of each note. Every dropout looks like a bow change, so the cursor counts too many repeats and runs ahead.
-- **Pirates** (62%) and **Maria** (95%, but 27–62% in other versions): fast repeated low notes the detector cannot read at all, followed by timing alone.
+After a restart the cursor is back within one note of the player within a second 92% of the time (22 of 24); the previous follower never found them again.
 
-Tried and not kept, each measured on the same tracks:
+Targets set for the experiment, and where they stand: within one note at least 95% (student takes yes; URMP violin 94.1% no), lost at most 1% (student takes yes except restarts, 2.0%; URMP violin 3.8% no), 90% lag at most 150 ms (yes, except URMP cello), back within a second after a restart (22 of 24).
 
-| Option                                                          | Result                                                                                        |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Matching the next three notes directly, without an alignment    | Once the player is more than three notes ahead, nothing matches and the cursor never recovers |
-| Matching any octave for every note ahead                        | An octave error on one note matched a note several places later and skipped there             |
-| Requiring half the written length before a repeat after a break | Spring 4 → 49%, but Pirates 62 → 27%, Maria 95 → 62%, viola 96 → 88%                          |
-| Measuring pace only when the pitch changes                      | Same trade: repeats carry most of the pace information in fast repeated passages              |
+On wrong notes alone, the cursor is not yet good enough for condition 5. With isolated wrong notes in the score (about one in twelve, judged from 150 ms into the note), the cursor sat on the wrong note 62% of the time for a semitone up, and 28 to 30% for a whole tone down or a fourth up. It mostly ran ahead (29 to 55%) to a later note with the pitch it heard, since a wrong note that matches the next written pitch looks the same as playing ahead. Judging a note will need its own timing, not only the cursor.
+
+Cello remains the weakest, mostly **Spring** (67%: long repeated E3s whose readings drop out mid-note) and **Pirates** and **Maria** (75% and 88%: fast repeated low notes the detector cannot read). Cello is out of scope until its excerpts arrive.
+
+How the model got there, each measured on both sets:
+
+| Change                                                       | Result                                                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| First version: readings counted in full, clock stopped in any silence | Played as recorded 99.4%, but mistakes 63% and another player 65%                   |
+| No note over before 30% of its length                        | Mistakes 63 → 82%, another player 65 → 92%                                                 |
+| Each reading counts for a quarter                            | Mistakes 82 → 96%                                                                          |
+| Restarts weighted toward the last few measures               | Back within a second after a restart 58 → 96%                                              |
+| Time runs through short silences; a break is a likely new stroke | URMP without restarts 93.5 → 95.1%: detached repeated notes were counted too slowly    |
+| Restarts only after half a second, chance 0.05               | URMP with restarts 89.9 → 94.1%                                                            |
+
+Tried and not kept:
+
+| Option                                                             | Result                                                                                                      |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Readings counted in full or at half                                | Higher exact share, but wrong notes pulled the cursor to later passages (mistakes 82–94%)                  |
+| Hearing the next written note when the sound repeats at its period | Tried on the previous follower: URMP 91.0 → 80.6%, since other notes' harmonics share periods with it       |
+| Restarts after a 1-second pause                                    | Most practice restarts are missed                                                                           |
+| A higher restart chance (0.1 to 0.5)                               | Slightly faster recovery, but viola on URMP drops to 84–95% from false restarts at rests                   |
 
 The person running a session can correct the cursor by hand, so the follower does not need to be perfect.
 
@@ -137,6 +160,8 @@ The person running a session can correct the cursor by hand, so the follower doe
 
 - **Vibrato**: pitch wobbles five to seven times a second, so judge a note by the median over about 0.15 to 0.2 seconds.
 - **Bow attack**: the first tens of milliseconds of a note are noisy and should not be judged.
+- **Confidence**: the follower knows how likely its note is. Judge a note only when that is high, so that a correct note is not marked wrong.
+- **Which note was wrong**: the cursor often runs ahead on a wrong note (above), so the judge should place a held pitch by the time it was played, not by where the cursor is a moment later.
 
 ## Designs not adopted
 
@@ -145,6 +170,7 @@ The person running a session can correct the cursor by hand, so the follower doe
 | A server or Cloudflare in front of Pages          | Nothing needs one. Revisit only for multithreaded WebAssembly, which needs COOP/COEP headers |
 | A language or classification model for judgement  | Models cannot take audio, and whether a pitch is in tune is arithmetic on cents              |
 | Advancing the cursor only on the expected pitch   | A wrong note would freeze the cursor, so condition 5 could never show it                     |
+| Rules stacked on an edit-distance alignment       | Each fix for one case broke another; replaced by one model that weighs pitch, time, and jumps |
 | Chroma features with online DTW for tracking      | Needed for piano and chords; deferred until single-line strings work                         |
 | Automatic grading                                 | The conductor scores performances with a rubric                                              |
 | Next.js `cacheComponents` and partial prefetching | Both rely on a server and fail a static export                                               |

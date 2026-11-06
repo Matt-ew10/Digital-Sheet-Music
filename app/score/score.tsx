@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { OpenSheetMusicDisplay } from "opensheetmusicdisplay";
 import { listen, microphone, recording } from "@/app/audio/listen";
+import { ReferencePicker, useReference } from "@/app/audio/reference";
 import settings from "@/settings";
 import { apply, conditions } from "./conditions";
 import { follower } from "./follow";
@@ -30,6 +31,7 @@ export default function Score() {
   const [position, setPosition] = useState(-1);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string>();
+  const [referenceHz, setReferenceHz] = useReference();
 
   // The cursor waits on the note playing starts from until the player gets there.
   const shown = Math.max(position, from);
@@ -109,9 +111,13 @@ export default function Score() {
     stop();
     setError(undefined);
 
-    const follow = follower(sheet.notes);
+    // Playing may start again from the first note of any measure.
+    const restarts = sheet.places.flatMap((place, index) =>
+      index === 0 || place.measure !== sheet.places[index - 1].measure ? [index] : [],
+    );
+    const follow = follower(sheet.notes, referenceHz, restarts);
 
-    follow.seek(from - 1);
+    follow.wait(from);
     followRef.current = follow;
 
     try {
@@ -246,6 +252,13 @@ export default function Score() {
             </option>
           ))}
         </select>
+
+        <ReferencePicker
+          className={button}
+          hz={referenceHz}
+          disabled={listening}
+          onChange={setReferenceHz}
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

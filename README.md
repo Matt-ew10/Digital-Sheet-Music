@@ -19,7 +19,7 @@ Scores are MusicXML files. The app does not grade performances; the conductor sc
 The prototype is built in stages, riskiest first:
 
 1. **Tuner** (done): microphone → pitch → note name and cents.
-2. **Score and cursor** (in progress): the score page renders MusicXML and a cursor follows the player (condition 2). A hand correction for the person running a session comes next.
+2. **Score and cursor** (in progress): the score page renders MusicXML and a cursor follows the player (condition 2), including when they stop and start again from an earlier measure while practicing.
 3. **Pitch feedback**: color each note right or wrong (condition 5).
 4. **The rest**: high contrast, simplified layout, and recording (conditions 3 and 4).
 
@@ -50,6 +50,7 @@ To try either page without an instrument, choose **Play a recording** and pick a
 On the score page, the person running a session:
 
 - picks one of the experiment's conditions (1 to 4; pitch feedback is not built yet). Colors for high contrast and spacing for the simplified layout are in `settings.ts`.
+- picks the A4 the player tuned to (440 or 442 Hz; participants use 442). The choice is remembered on the device and shared with the tuner page.
 - clicks a note before playing to start from its measure, for practicing part of a passage.
 - clicks a note while listening, or uses ◀ ▶ or the arrow keys, to put the cursor back on the player when it goes astray.
 
