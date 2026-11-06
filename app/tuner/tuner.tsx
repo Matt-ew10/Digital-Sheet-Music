@@ -3,6 +3,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { listen, microphone, recording } from "@/app/audio/listen";
 import { steady, type Reading } from "@/app/audio/pitch";
+import { ReferencePicker, useReference } from "@/app/audio/reference";
 import settings from "@/settings";
 import { nearest } from "./note";
 
@@ -10,6 +11,7 @@ export default function Tuner() {
   const [listening, setListening] = useState(false);
   const [reading, setReading] = useState<Reading>();
   const [error, setError] = useState<string>();
+  const [referenceHz, setReferenceHz] = useReference();
   const stopRef = useRef<() => void>(undefined);
   const recentRef = useRef<Timed[]>([]);
 
@@ -60,7 +62,7 @@ export default function Tuner() {
 
   return (
     <div className="flex flex-col items-center gap-10">
-      <Display reading={reading} />
+      <Display reading={reading} referenceHz={referenceHz} />
 
       <div className="flex flex-wrap justify-center gap-3">
         {listening ? (
@@ -86,19 +88,27 @@ export default function Tuner() {
 
       {error && <p className="text-red-600">{error}</p>}
 
-      <p className="text-sm text-zinc-500">
-        A4 = {settings.referenceHz} Hz. Change it in settings.ts.
-      </p>
+      <ReferencePicker
+        className={button}
+        hz={referenceHz}
+        onChange={setReferenceHz}
+      />
     </div>
   );
 }
 
-function Display({ reading }: { reading?: Reading }) {
+function Display({
+  reading,
+  referenceHz,
+}: {
+  reading?: Reading;
+  referenceHz: number;
+}) {
   if (!reading) {
     return <div className="text-8xl font-semibold text-zinc-300">–</div>;
   }
 
-  const note = nearest(reading.hz, settings.referenceHz);
+  const note = nearest(reading.hz, referenceHz);
   const offset = `${50 + note.cents}%`;
 
   return (

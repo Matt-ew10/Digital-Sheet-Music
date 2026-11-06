@@ -1,7 +1,11 @@
 // Values the experiment team tunes by playing. Changing them needs no other code change.
 const settings = {
-  // Frequency of A4 the ensemble tunes to. Many Korean orchestras use 442.
-  referenceHz: 440,
+  // Frequency of A4 the player tuned to, in Hz. Both pages offer the choices; the default is
+  // the one used until someone picks another. Participants tune to 442 before the experiment;
+  // the student's practice recordings were made at 440. The two are 8 cents apart, more than
+  // half of condition 5's tolerance.
+  referenceHz: 442,
+  referenceChoices: [440, 442],
 
   // Readings quieter than this RMS level are treated as silence. 0 dB is the loudest possible
   // input. Played notes in the URMP recordings sit around -35 to -50.
