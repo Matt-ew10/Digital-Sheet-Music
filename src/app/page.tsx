@@ -39,14 +39,30 @@ export default function Home() {
     if (event.key === "ArrowRight") move(shown + 1);
   });
 
-  // Scores sit next to this page, so a relative URL also works under GitHub Pages' path.
+  // Scores sit next to this page, so a relative URL also works under GitHub Pages' path. A score
+  // picked while another is still loading replaces it.
   useEffect(() => {
     if (!chosen) return;
 
-    fetch(`scores/${chosen}`)
-      .then((response) => response.text())
-      .then(onFetched)
-      .catch((cause) => setError(String(cause)));
+    const controller = new AbortController();
+
+    fetch(`scores/${chosen}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Could not load ${chosen}: HTTP ${response.status}`);
+        }
+
+        return response.text();
+      })
+      .then((score) => {
+        if (!controller.signal.aborted) onFetched(score);
+      })
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setError(cause instanceof Error ? cause.message : String(cause));
+      });
+
+    return () => controller.abort();
   }, [chosen]);
 
   useEffect(() => {
