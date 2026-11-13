@@ -16,13 +16,13 @@ const settings = {
   // correctly than 0.9.
   minClarity: 0.8,
 
-  // Pitch feedback, switched on in the toolbar: a note is right within `right` cents of its
-  // written pitch and wrong beyond `wrong`; between the two it is not judged, since a false mark
-  // is worse than a missed one. A sound is judged after `attack` seconds of bow attack and
-  // `hold` seconds held, and a new stroke counts as the next note once `strokes` of the note's
-  // written length has passed. Wrong notes are drawn in `color`. Measured with
-  // `pnpm evaluate:judge`: on the student's correct takes, 15/25 marks 3.9% of notes; 12/18
-  // marks 8.1%.
+  // Condition 5, pitch feedback: a note is right within `right` cents of its written pitch and
+  // wrong beyond `wrong`; between the two it is not judged, since a false mark is worse than a
+  // missed one. A sound is judged after `attack` seconds of bow attack and `hold` seconds held,
+  // and a new stroke counts as the next note once `strokes` of the note's written length has
+  // passed. Wrong notes are drawn in `color`. Measured with
+  // `pnpm evaluate:judge`: on the student's correct takes, 15/25 marks 0.4% of violin and 3.7%
+  // of viola notes; 12/18 marks 2.2% and 8.5%.
   feedback: {
     right: 15,
     wrong: 25,

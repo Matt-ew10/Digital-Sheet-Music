@@ -4,13 +4,13 @@ import type {
 } from "opensheetmusicdisplay";
 import settings from "@/settings";
 
-// The ways the experiment shows a score (Table 1 of the research plan). Pitch feedback
-// (condition 5) is not listed: it is a switch in the toolbar, so condition 2 with the switch on.
+// The ways the experiment shows a score (Table 1 of the research plan).
 export const conditions = [
-  { name: "Standard score", cursor: false, contrast: false, spacing: false },
-  { name: "Position tracking", cursor: true, contrast: false, spacing: false },
-  { name: "High contrast", cursor: false, contrast: true, spacing: false },
-  { name: "Simplified layout", cursor: false, contrast: false, spacing: true },
+  { name: "Standard score", cursor: false, contrast: false, spacing: false, feedback: false },
+  { name: "Position tracking", cursor: true, contrast: false, spacing: false, feedback: false },
+  { name: "High contrast", cursor: false, contrast: true, spacing: false, feedback: false },
+  { name: "Simplified layout", cursor: false, contrast: false, spacing: true, feedback: false },
+  { name: "Pitch feedback", cursor: true, contrast: false, spacing: false, feedback: true },
 ];
 
 // Sets OSMD up to draw `condition`, starting from OSMD's defaults so that nothing carries over

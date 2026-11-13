@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -174,29 +173,6 @@ export function NoteStepper({
         </Button>
       </Hint>
     </div>
-  );
-}
-
-// Marks notes played out of tune while following. Set before starting; it applies to the next
-// time following starts.
-export function FeedbackSwitch({
-  checked,
-  disabled,
-  onChange,
-}: {
-  checked: boolean;
-  disabled: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center gap-2">
-      <Switch
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={onChange}
-      />
-      Pitch feedback
-    </label>
   );
 }
 

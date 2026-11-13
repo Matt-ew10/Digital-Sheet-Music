@@ -4,7 +4,6 @@ import { useEffect, useEffectEvent, useState } from "react";
 import Score from "@/components/score";
 import {
   ConditionPicker,
-  FeedbackSwitch,
   FollowControls,
   NoteStepper,
   ReferencePicker,
@@ -27,7 +26,6 @@ export default function Home() {
   const [sheet, setSheet] = useState<Sheet>();
   const [condition, setCondition] = useState(1);
   const [from, setFrom] = useState(0);
-  const [feedback, setFeedback] = useState(false);
   const [error, setError] = useState<string>();
   const [referenceHz, setReferenceHz] = useReference();
   const session = useListening();
@@ -104,7 +102,7 @@ export default function Home() {
 
     follow.wait(from);
 
-    const judgement = feedback
+    const judgement = conditions[condition].feedback
       ? judge(sheet.notes, referenceHz, settings.feedback)
       : undefined;
 
@@ -165,12 +163,7 @@ export default function Home() {
           onMove={move}
         />
 
-        <div className="ml-auto flex items-center gap-4">
-          <FeedbackSwitch
-            checked={feedback}
-            disabled={listening}
-            onChange={setFeedback}
-          />
+        <div className="ml-auto flex items-center gap-2">
           <ConditionPicker
             value={condition}
             disabled={listening}
