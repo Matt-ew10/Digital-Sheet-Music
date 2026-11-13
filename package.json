@@ -14,7 +14,7 @@
     "urmp:musicxml": "tsx scripts/musicxml.ts"
   },
   "dependencies": {
-    "next": "16.4.2",
+    "next": "16.4.6",
     "opensheetmusicdisplay": "2.2.0",
     "pitchy": "4.1.0",
     "react": "19.3.0",
@@ -27,7 +27,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.6",
     "tailwindcss": "^4",
     "tsx": "4.23.15",
     "typescript": "^5"
