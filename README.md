@@ -62,12 +62,13 @@ The person running a session:
 
 ## Scores
 
-`public/scores/` holds the passages the student chose for the experiment, for violin and viola: 13 violin and 8 viola excerpts, from beginner to advanced. They are public-domain works, transcribed as pitches and rhythms only; fingerings, bowings, dynamics, and other markings from the printed editions are left out. The three pieces Shinichi Suzuki composed are not included.
+`public/scores/` holds the passages the student chose for the experiment, for violin and viola: 15 violin and 10 viola excerpts, from beginner to advanced. They are public-domain works, transcribed as pitches and rhythms only; fingerings, bowings, dynamics, and other markings from the printed editions are left out. The three pieces Shinichi Suzuki composed were replaced with Bach's Minuets No. 1 and No. 3 for violin and Gossec's Gavotte and Brahms's Waltz for viola.
 
 Still open with the research team:
 
 - The Seitz concertos start with the orchestra's introduction, and the Veracini sonata with six measures of rest.
-- The viola Bach Bourrée and Bach Gavotte end inside a repeated section, so the score page plays that section twice (210 and 142 notes) where the player plays it once.
+- The viola Bach Bourrée and Bach Gavotte and the violin Minuet No. 1 end inside a repeated section, so the score page plays that section twice where the player plays it once (210 and 142 notes instead of 154 and 120 for the viola pieces).
+- The student's recordings of Minuet No. 1, Minuet No. 3, and the Gossec Gavotte leave out the printed repeats, which the score page plays.
 - Some measures still need a proofread against the printed parts.
 
 Cello excerpts are not in yet.

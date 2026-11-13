@@ -6,6 +6,8 @@ const scores: Score[] = [
   { file: "violin/hunters-chorus.musicxml", title: "Hunters' Chorus", composer: "Weber", group: "Violin, beginner" },
   { file: "violin/long-long-ago.musicxml", title: "Long, Long Ago", composer: "Bayly", group: "Violin, beginner" },
   { file: "violin/lully-gavotte.musicxml", title: "Gavotte", composer: "Lully", group: "Violin, beginner" },
+  { file: "violin/bach-minuet-no-1.musicxml", title: "Minuet No. 1", composer: "Bach", group: "Violin, beginner" },
+  { file: "violin/bach-minuet-no-3.musicxml", title: "Minuet No. 3", composer: "Bach", group: "Violin, beginner" },
 
   { file: "violin/bach-bourree.musicxml", title: "Bourrée", composer: "Bach", group: "Violin, intermediate" },
   { file: "violin/becker-gavotte.musicxml", title: "Gavotte", composer: "Becker", group: "Violin, intermediate" },
@@ -22,6 +24,8 @@ const scores: Score[] = [
   { file: "viola/handel-bourree.musicxml", title: "Bourrée", composer: "Handel", group: "Viola, beginner" },
   { file: "viola/hunters-chorus.musicxml", title: "Hunters' Chorus", composer: "Weber", group: "Viola, beginner" },
   { file: "viola/long-long-ago.musicxml", title: "Long, Long Ago", composer: "Bayly", group: "Viola, beginner" },
+  { file: "viola/gossec-gavotte.musicxml", title: "Gavotte", composer: "Gossec", group: "Viola, beginner" },
+  { file: "viola/brahms-waltz.musicxml", title: "Waltz", composer: "Brahms", group: "Viola, beginner" },
 
   { file: "viola/bach-bourree.musicxml", title: "Bourrée", composer: "Bach", group: "Viola, intermediate" },
   { file: "viola/bach-gavotte.musicxml", title: "Gavotte (Orchestral Suite No. 3)", composer: "Bach", group: "Viola, intermediate" },
