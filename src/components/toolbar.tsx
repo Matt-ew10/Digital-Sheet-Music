@@ -1,6 +1,11 @@
 "use client";
 
-import type { ChangeEvent } from "react";
+import {
+  useRef,
+  type ChangeEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,6 +14,22 @@ import {
   Mic,
   Square,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { conditions } from "@/lib/score/conditions";
 import scores from "@/lib/score/list";
 import settings from "@/settings";
@@ -29,47 +50,47 @@ export function ScorePicker({
   onOpen: (file: File) => void;
 }) {
   const groups = [...new Set(scores.map((score) => score.group))];
-
-  function onChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-
-    if (file) onOpen(file);
-    event.target.value = "";
-  }
+  const labels = Object.fromEntries([
+    ["", opened],
+    ...scores.map((score) => [score.file, caption(score)]),
+  ]);
 
   return (
     <div className="flex items-center gap-1">
-      <select
-        className={control}
-        aria-label="Score"
+      <Select
+        items={labels}
         value={chosen ?? ""}
         disabled={disabled}
-        onChange={(event) => onChoose(event.target.value)}
+        onValueChange={(file) => file && onChoose(file)}
       >
-        {opened && !chosen && <option value="">{opened}</option>}
-        {groups.map((group) => (
-          <optgroup key={group} label={group}>
-            {scores
-              .filter((score) => score.group === group)
-              .map((score) => (
-                <option key={score.file} value={score.file}>
-                  {score.title} ({score.composer})
-                </option>
-              ))}
-          </optgroup>
-        ))}
-      </select>
+        <SelectTrigger aria-label="Score" className="max-w-72">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {opened && !chosen && <SelectItem value="">{opened}</SelectItem>}
+          {groups.map((group) => (
+            <SelectGroup key={group}>
+              <SelectLabel>{group}</SelectLabel>
+              {scores
+                .filter((score) => score.group === group)
+                .map((score) => (
+                  <SelectItem key={score.file} value={score.file}>
+                    {caption(score)}
+                  </SelectItem>
+                ))}
+            </SelectGroup>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <label className={icon} title="Open a MusicXML file">
-        <FolderOpen size={18} aria-label="Open a MusicXML file" />
-        <input
-          className="hidden"
-          type="file"
-          accept=".musicxml,.xml,.mxl"
-          disabled={disabled}
-          onChange={onChange}
-        />
-      </label>
+      <FilePicker
+        label="Open a MusicXML file"
+        accept=".musicxml,.xml,.mxl"
+        disabled={disabled}
+        onPick={onOpen}
+      >
+        <FolderOpen />
+      </FilePicker>
     </div>
   );
 }
@@ -86,40 +107,29 @@ export function FollowControls({
   onRecording: (file: File) => void;
   onStop: () => void;
 }) {
-  function onChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-
-    if (file) onRecording(file);
-    event.target.value = "";
-  }
-
   return (
     <div className="flex items-center gap-2">
-      <span className="text-zinc-500">Follow</span>
+      <span className="text-muted-foreground">Follow</span>
 
       {source !== undefined ? (
-        <button className={`${segment} rounded-full`} onClick={onStop}>
-          <Square size={14} fill="currentColor" />
+        <Button variant="outline" onClick={onStop}>
+          <Square fill="currentColor" />
           Stop
-          <span className="max-w-40 truncate text-zinc-500">{source}</span>
-        </button>
+          <span className="max-w-40 truncate text-muted-foreground">
+            {source}
+          </span>
+        </Button>
       ) : (
-        <div className="flex">
-          <button className={`${segment} rounded-l-full`} onClick={onMicrophone}>
-            <Mic size={16} />
+        <ButtonGroup>
+          <Button variant="outline" onClick={onMicrophone}>
+            <Mic />
             Microphone
-          </button>
-          <label className={`${segment} -ml-px rounded-r-full`}>
-            <FileAudio size={16} />
+          </Button>
+          <FilePicker accept="audio/*" onPick={onRecording}>
+            <FileAudio />
             Recording
-            <input
-              className="hidden"
-              type="file"
-              accept="audio/*"
-              onChange={onChange}
-            />
-          </label>
-        </div>
+          </FilePicker>
+        </ButtonGroup>
       )}
     </div>
   );
@@ -138,24 +148,30 @@ export function NoteStepper({
 }) {
   return (
     <div className="flex items-center gap-1">
-      <button
-        className={icon}
-        aria-label="Previous note"
-        onClick={() => onMove(note - 1)}
-      >
-        <ChevronLeft size={18} />
-      </button>
+      <Hint label="Previous note">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Previous note"
+          onClick={() => onMove(note - 1)}
+        >
+          <ChevronLeft />
+        </Button>
+      </Hint>
       <span className="min-w-24 text-center tabular-nums">
         {label} {note + 1}
         {count > 0 && ` of ${count}`}
       </span>
-      <button
-        className={icon}
-        aria-label="Next note"
-        onClick={() => onMove(note + 1)}
-      >
-        <ChevronRight size={18} />
-      </button>
+      <Hint label="Next note">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Next note"
+          onClick={() => onMove(note + 1)}
+        >
+          <ChevronRight />
+        </Button>
+      </Hint>
     </div>
   );
 }
@@ -169,20 +185,29 @@ export function ConditionPicker({
   disabled: boolean;
   onChange: (condition: number) => void;
 }) {
+  const items = conditions.map((condition, index) => ({
+    value: index,
+    label: `${index + 1}. ${condition.name}`,
+  }));
+
   return (
-    <select
-      className={control}
-      aria-label="Condition"
+    <Select
+      items={items}
       value={value}
       disabled={disabled}
-      onChange={(event) => onChange(Number(event.target.value))}
+      onValueChange={(condition) => condition !== null && onChange(condition)}
     >
-      {conditions.map((option, index) => (
-        <option key={option.name} value={index}>
-          {index + 1}. {option.name}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger aria-label="Condition">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {items.map((item) => (
+          <SelectItem key={item.value} value={item.value}>
+            {item.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -195,26 +220,97 @@ export function ReferencePicker({
   disabled: boolean;
   onChange: (hz: number) => void;
 }) {
+  const items = settings.referenceChoices.map((choice) => ({
+    value: choice,
+    label: `A4 = ${choice} Hz`,
+  }));
+
   return (
-    <select
-      className={control}
+    <Select
+      items={items}
       value={hz}
       disabled={disabled}
-      aria-label="Reference pitch"
-      onChange={(event) => onChange(Number(event.target.value))}
+      onValueChange={(choice) => choice !== null && onChange(choice)}
     >
-      {settings.referenceChoices.map((choice) => (
-        <option key={choice} value={choice}>
-          A4 = {choice} Hz
-        </option>
-      ))}
-    </select>
+      <SelectTrigger aria-label="Reference pitch">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {items.map((item) => (
+          <SelectItem key={item.value} value={item.value}>
+            {item.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
-const control =
-  "h-9 cursor-pointer rounded-full border border-zinc-300 bg-transparent px-3 hover:bg-zinc-100 disabled:cursor-default disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-900";
-const icon =
-  "flex size-9 cursor-pointer items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900";
-const segment =
-  "flex h-9 cursor-pointer items-center gap-2 border border-zinc-300 px-4 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900";
+// A button that opens the file picker. With a label it shows only its icon, and the label as a
+// tooltip.
+function FilePicker({
+  label,
+  accept,
+  disabled,
+  onPick,
+  children,
+}: {
+  label?: string;
+  accept: string;
+  disabled?: boolean;
+  onPick: (file: File) => void;
+  children: ReactNode;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function onChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (file) onPick(file);
+    event.target.value = "";
+  }
+
+  const button = (
+    <Button
+      variant={label ? "ghost" : "outline"}
+      size={label ? "icon" : "default"}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => inputRef.current?.click()}
+    >
+      {children}
+    </Button>
+  );
+
+  return (
+    <>
+      {label ? <Hint label={label}>{button}</Hint> : button}
+      <input
+        ref={inputRef}
+        className="hidden"
+        type="file"
+        accept={accept}
+        onChange={onChange}
+      />
+    </>
+  );
+}
+
+function Hint({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactElement;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger render={children} />
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function caption(score: (typeof scores)[number]) {
+  return `${score.title} (${score.composer})`;
+}

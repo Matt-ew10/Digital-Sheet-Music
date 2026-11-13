@@ -134,7 +134,7 @@ export default function Home() {
 
   return (
     <div className="flex h-dvh flex-col">
-      <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-zinc-200 px-4 py-2 text-sm dark:border-zinc-800">
+      <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b px-4 py-2 text-sm">
         <ScorePicker
           chosen={chosen}
           opened={opened}
@@ -170,7 +170,7 @@ export default function Home() {
           />
         </div>
 
-        {error && <p className="w-full text-red-600">{error}</p>}
+        {error && <p className="w-full text-destructive">{error}</p>}
       </header>
 
       <Score
