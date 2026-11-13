@@ -64,6 +64,8 @@ export function read(osmd: OpenSheetMusicDisplay) {
   };
 }
 
+export type Sheet = ReturnType<typeof read>;
+
 // Where a note is on the page. A note inside a repeat has one place per time it is played.
 export interface Place {
   step: number;

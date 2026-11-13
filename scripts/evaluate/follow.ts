@@ -2,7 +2,7 @@
 // frame against the score note actually being played. Usage: pnpm evaluate:follow <URMP Dataset folder>
 import { readFile } from "node:fs/promises";
 import { Midi } from "@tonejs/midi";
-import type { Note } from "@/app/score/follow";
+import type { Note } from "@/lib/score/follow";
 import { evaluate, percent, Score } from "./measure";
 import { decode, parse, replay, tracks } from "./urmp";
 

@@ -1,10 +1,10 @@
 // Reads the first part of a simple MusicXML score into the notes the follower takes, for
 // scripts that run outside the browser. The app reads scores through OSMD instead
-// (app/score/sheet.ts); this reader only covers what the experiment's excerpts use: one tempo,
+// (src/lib/score/read.ts); this reader only covers what the experiment's excerpts use: one tempo,
 // chords, rests, ties, grace notes, and repeats without endings. It follows the same rules:
 // rests, grace notes, and tied continuations start no note, and repeats are played once more.
 // Each note also carries the measure it is in, counted as played.
-import type { Note } from "@/app/score/follow";
+import type { Note } from "@/lib/score/follow";
 
 export function readScore(xml: string): (Note & { measure: number })[] {
   const divisions = Number(xml.match(/<divisions>(\d+)/)?.[1]);

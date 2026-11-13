@@ -11,34 +11,6 @@ export function useReference() {
   return [hz, choose] as const;
 }
 
-export function ReferencePicker({
-  hz,
-  onChange,
-  disabled,
-  className,
-}: {
-  hz: number;
-  onChange: (hz: number) => void;
-  disabled?: boolean;
-  className?: string;
-}) {
-  return (
-    <select
-      className={className}
-      value={hz}
-      disabled={disabled}
-      aria-label="Reference pitch"
-      onChange={(event) => onChange(Number(event.target.value))}
-    >
-      {settings.referenceChoices.map((choice) => (
-        <option key={choice} value={choice}>
-          A4 = {choice} Hz
-        </option>
-      ))}
-    </select>
-  );
-}
-
 const key = "referenceHz";
 const listeners = new Set<() => void>();
 

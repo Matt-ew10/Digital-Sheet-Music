@@ -1,7 +1,7 @@
 // Measures pitch detection against the string tracks of the URMP dataset, whose pitch
 // annotations were corrected by hand. Usage: pnpm evaluate:pitch <URMP Dataset folder>
 import { readFile } from "node:fs/promises";
-import { windowSize } from "@/app/audio/pitch";
+import { windowSize } from "@/lib/audio/pitch";
 import { decode, frameRate, parse, replay, tracks } from "./urmp";
 
 async function main(root?: string) {

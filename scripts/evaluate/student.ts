@@ -11,7 +11,7 @@
 //   second, and starts again from the beginning of a measure one or two measures back.
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Note } from "@/app/score/follow";
+import type { Note } from "@/lib/score/follow";
 import { takes } from "./label";
 import { evaluate, percent, Score } from "./measure";
 import { readScore } from "./musicxml";

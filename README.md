@@ -28,10 +28,12 @@ The first target is single-line string playing: violin, viola, and cello.
 ## Structure
 
 - Everything runs in the browser. There is no server: the site is a static export hosted on GitHub Pages, and nothing a participant plays leaves their device.
-- `settings.ts` holds the values the research team tunes by playing, such as the reference pitch. Change them there; no other code needs to change.
-- `app/audio/` reads audio from the microphone or a recorded file and detects pitch with [pitchy](https://github.com/ianprime0509/pitchy) (the McLeod pitch method).
-- `app/score/` draws a MusicXML score with [OpenSheetMusicDisplay](https://opensheetmusicdisplay.org) and moves its cursor to follow the player. It is the app's only page.
-- `public/scores/` holds the experiment's excerpts for violin and viola, and `app/score/scores.ts` lists them for the score picker.
+- `src/settings.ts` holds the values the research team tunes by playing, such as the reference pitch. Change them there; no other code needs to change.
+- `src/lib/` is the app's logic, with no user interface:
+  - `audio/` reads audio from the microphone or a recorded file and detects pitch with [pitchy](https://github.com/ianprime0509/pitchy) (the McLeod pitch method).
+  - `score/` reads a MusicXML score's notes from [OpenSheetMusicDisplay](https://opensheetmusicdisplay.org), follows the player through them, and sets up each condition's drawing.
+- `src/app/`, `src/components/`, and `src/hooks/` are the app's only page: the toolbar, the score, and the listening session that connects them.
+- `public/scores/` holds the experiment's excerpts for violin and viola, and `src/lib/score/list.ts` lists them for the score picker.
 - `scripts/evaluate/` measures pitch detection and score following against recordings whose notes are known.
 
 How the pieces work and why is in [docs/architecture.md](docs/architecture.md). How to run, check, and deploy is in [docs/development.md](docs/development.md).
@@ -51,7 +53,7 @@ The page opens with a short sample. The picker at the top left lists the experim
 
 The person running a session:
 
-- picks one of the experiment's conditions (1 to 4; pitch feedback is not built yet). Colors for high contrast and spacing for the simplified layout are in `settings.ts`.
+- picks one of the experiment's conditions (1 to 4; pitch feedback is not built yet). Colors for high contrast and spacing for the simplified layout are in `src/settings.ts`.
 - picks the A4 the player tuned to (440 or 442 Hz; participants use 442). The choice is remembered on the device.
 - clicks a note before playing to start from its measure, for practicing part of a passage.
 - clicks a note while following, or uses the arrows beside the note number or the arrow keys, to put the cursor back on the player when it goes astray.

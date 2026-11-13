@@ -57,7 +57,7 @@ Each reading is compared with the annotated pitch at the center of its window.
 | median error | For correct readings, the typical distance from the true pitch, in cents     |
 | 90% error    | For correct readings, the distance 90% of them stay within, in cents         |
 
-Run it before and after a change to `settings.ts` or `app/audio/pitch.ts`, and keep the change only if the numbers improve.
+Run it before and after a change to `src/settings.ts` or `src/lib/audio/pitch.ts`, and keep the change only if the numbers improve.
 
 ### Score following
 
@@ -75,7 +75,7 @@ The true position at each moment is the score note being played, found by matchi
 | median lag      | After a note starts, how long until the cursor reaches it                 |
 | 90% lag         | The lag 90% of notes stay within                                          |
 
-Run it before and after a change to `app/score/follow.ts`. It also prints each track's result, which shows where a change helps or hurts.
+Run it before and after a change to `src/lib/score/follow.ts`. It also prints each track's result, which shows where a change helps or hurts.
 
 ### The student's recordings
 

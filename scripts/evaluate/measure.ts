@@ -1,5 +1,5 @@
 // Measures score following on a recording whose played notes are known.
-import { follower, type Note } from "@/app/score/follow";
+import { follower, type Note } from "@/lib/score/follow";
 import { frameRate } from "./urmp";
 
 // Runs the follower over the readings and compares its cursor at every frame, from the first

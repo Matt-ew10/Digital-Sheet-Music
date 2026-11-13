@@ -21,10 +21,10 @@ microphone or file → AnalyserNode → 2048 samples every frame → pitchy (McL
 
 - The microphone is opened with echo cancellation, noise suppression, and automatic gain control off. They are designed for speech and distort instrument sound.
 - Each reading looks at 2048 samples (about 43 ms at 48 kHz). Detection needs about two periods of the lowest note; this holds nearly three periods of C2, the cello's lowest note. A longer window reaches lower notes but reacts later.
-- A reading counts as a note only if it is louder than `minVolumeDb` and clearer than `minClarity` (both in `settings.ts`). Otherwise there is no reading, which the follower treats as silence.
+- A reading counts as a note only if it is louder than `minVolumeDb` and clearer than `minClarity` (both in `src/settings.ts`). Otherwise there is no reading, which the follower treats as silence.
   - Clarity decides most misses. Low strings often read below 0.9 because their overtones are strong; 0.8 recovers most of them at the cost of more readings between notes. Going lower gains little (see the table below).
   - Loudness cannot tell notes from gaps in URMP: frames annotated as silent are about as loud as played ones, because they are mostly releases and ringing. The volume gate only catches true silence.
-- Notes are named from the A4 the player tuned to, picked on the score page from `referenceChoices` and remembered on the device (`app/audio/reference.tsx`). Participants tune to 442 Hz before the experiment, but the student's practice recordings were made at 440 Hz. With the wrong choice every note reads 8 cents off, more than half of condition 5's 15-cent tolerance. The follower rounds to semitones, so following is not affected. The URMP evaluation always uses 440 Hz, which URMP is tuned to.
+- Notes are named from the A4 the player tuned to, picked on the score page from `referenceChoices` and remembered on the device (`src/hooks/use-reference.ts`). Participants tune to 442 Hz before the experiment, but the student's practice recordings were made at 440 Hz. With the wrong choice every note reads 8 cents off, more than half of condition 5's 15-cent tolerance. The follower rounds to semitones, so following is not affected. The URMP evaluation always uses 440 Hz, which URMP is tuned to.
 - The `AudioContext` is created synchronously in the click handler. Safari only lets audio start inside the user's gesture.
 
 ### Measured accuracy
@@ -55,7 +55,7 @@ Octave errors need context a single window does not have. The score follower has
 
 ## Following the score
 
-`app/score/follow.ts` turns pitch readings into the position of the note being played. It is developed against URMP with `pnpm evaluate:follow` and the student's recordings with `pnpm evaluate:student`, and the score page shows it on a rendered score.
+`src/lib/score/follow.ts` turns pitch readings into the position of the note being played. It is developed against URMP with `pnpm evaluate:follow` and the student's recordings with `pnpm evaluate:student`, and the score page shows it on a rendered score.
 
 ```
 readings → odds over (score note, time spent on it) → most likely note → cursor
@@ -85,7 +85,7 @@ The score page draws MusicXML with OpenSheetMusicDisplay (OSMD) and moves OSMD's
 - The follower is given the audio clock's time with each reading, not a reading count, since screens refresh at different rates. It moves in fixed steps of a sixtieth of a second, so a 120 Hz screen gives it the same steps.
 - The follower reads once per animation frame, so a hidden page or a backgrounded tab (which browsers throttle or stop) stops it. The page must stay on screen during a session.
 - **Corrections.** `wait` says which note playing starts from; `seek` puts the player on a note while they play. Both forget the odds elsewhere.
-- **Conditions.** Each condition is a set of switches: whether the cursor shows, high-contrast colors, and simplified spacing (`app/score/conditions.ts`). Switching re-renders the score from OSMD's default engraving rules, so nothing from the previous condition carries over. Simplified spacing widens note spacing, fixes the measures per line, and spreads the lines apart; high contrast only changes colors, so the layout matches the standard score as the research plan requires. Black on white is already the highest possible contrast, so condition 3 defaults to white on black; the research team should confirm what "higher contrast" means.
+- **Conditions.** Each condition is a set of switches: whether the cursor shows, high-contrast colors, and simplified spacing (`src/lib/score/conditions.ts`). Switching re-renders the score from OSMD's default engraving rules, so nothing from the previous condition carries over. Simplified spacing widens note spacing, fixes the measures per line, and spreads the lines apart; high contrast only changes colors, so the layout matches the standard score as the research plan requires. Black on white is already the highest possible contrast, so condition 3 defaults to white on black; the research team should confirm what "higher contrast" means.
 
 ### Measured accuracy
 

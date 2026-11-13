@@ -7,8 +7,8 @@
 // truth: next to each label file it writes the recording with a click at every labeled onset.
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Note } from "@/app/score/follow";
-import { windowSize } from "@/app/audio/pitch";
+import type { Note } from "@/lib/score/follow";
+import { windowSize } from "@/lib/audio/pitch";
 import { readScore } from "./musicxml";
 import { decode, frameRate, replay } from "./urmp";
 
