@@ -90,7 +90,7 @@ async function main(folder?: string) {
     }
 
     rows.push({
-      setting: `${options.right}/${options.wrong} cents, hold ${options.hold} s`,
+      setting: `right within ${options.right}, wrong beyond ${options.wrong} cents`,
       judged: percent(totals.judged, totals.notes),
       "marked as recorded": percent(totals.marked, totals.notes),
       "false marks": percent(totals.falseMarks, totals.notes),
@@ -236,11 +236,10 @@ function random(seed: number) {
 const tolerance = 15;
 const shifts = [30, 50, 100];
 const settings: Options[] = [
-  { right: 12, wrong: 18, attack: 0.05, hold: 0.15 },
-  { right: 12, wrong: 18, attack: 0.05, hold: 0.25 },
-  { right: 15, wrong: 25, attack: 0.05, hold: 0.15 },
-  { right: 15, wrong: 25, attack: 0.05, hold: 0.25 },
-  { right: 20, wrong: 35, attack: 0.05, hold: 0.15 },
+  { right: 15, wrong: 25, attack: 0.04, hold: 0.1, strokes: 0.8 },
+  { right: 12, wrong: 18, attack: 0.04, hold: 0.1, strokes: 0.8 },
+  { right: 15, wrong: 20, attack: 0.04, hold: 0.1, strokes: 0.8 },
+  { right: 20, wrong: 30, attack: 0.04, hold: 0.1, strokes: 0.8 },
 ];
 
 void main(process.argv[2]);
