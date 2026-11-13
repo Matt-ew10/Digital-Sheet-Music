@@ -19,9 +19,9 @@ Scores are MusicXML files. The app does not grade performances; the conductor sc
 The prototype is built in stages, riskiest first:
 
 1. **Pitch** (done): microphone or recording → pitch, measured against annotated recordings.
-2. **Score and cursor** (in progress): the score page renders MusicXML and a cursor follows the player (condition 2), including when they stop and start again from an earlier measure while practicing.
-3. **Pitch feedback** (in progress): notes played out of tune turn red, and clear when the passage is played again in tune (condition 5). Measured on the student's takes; not yet checked by ear.
-4. **The rest**: high contrast, simplified layout, and recording (conditions 3 and 4).
+2. **Score and cursor** (done): the score page renders MusicXML and a cursor follows the player, including when they stop and start again from an earlier measure while practicing. The person running a session can put the cursor back by hand.
+3. **Conditions** (done): all five conditions above. Still to confirm with the research team: the high-contrast colors, the simplified spacing, and the pitch tolerance, whose marks have not yet been checked by ear.
+4. **Recording and devices** (next): record each performance in the app for the conductor's rubric, and check the app on the experiment's devices, iPad Safari in particular.
 
 The first target is single-line string playing: violin, viola, and cello.
 
