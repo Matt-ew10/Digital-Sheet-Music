@@ -32,7 +32,7 @@ The first target is single-line string playing: violin, viola, and cello.
 - `src/lib/` is the app's logic, with no user interface:
   - `audio/` reads audio from the microphone or a recorded file and detects pitch with [pitchy](https://github.com/ianprime0509/pitchy) (the McLeod pitch method).
   - `score/` reads a MusicXML score's notes from [OpenSheetMusicDisplay](https://opensheetmusicdisplay.org), follows the player through them, and sets up each condition's drawing.
-- `src/app/`, `src/components/`, and `src/hooks/` are the app's only page: the toolbar, the score, and the listening session that connects them.
+- `src/app/`, `src/components/`, and `src/hooks/` are the app's only page: the toolbar, the score, and the listening session that connects them. The toolbar's buttons and menus are [shadcn/ui](https://ui.shadcn.com) components on [Base UI](https://base-ui.com), in `src/components/ui/`.
 - `public/scores/` holds the experiment's excerpts for violin and viola, and `src/lib/score/list.ts` lists them for the score picker.
 - `scripts/` holds development tools: `evaluate/` measures pitch detection and score following against recordings whose notes are known, and `urmp/` reads the URMP dataset.
 
