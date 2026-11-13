@@ -1,6 +1,6 @@
 // Measures score following on a recording whose played notes are known.
 import { follower, type Note } from "@/lib/score/follow";
-import { frameRate } from "./urmp";
+import { frameRate } from "./recording";
 
 // Runs the follower over the readings and compares its cursor at every frame, from the first
 // played note to the end of the last, with the score position of the note being played. During

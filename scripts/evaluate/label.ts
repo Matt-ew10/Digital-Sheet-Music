@@ -10,7 +10,7 @@ import { join } from "node:path";
 import type { Note } from "@/lib/score/follow";
 import { windowSize } from "@/lib/audio/pitch";
 import { readScore } from "./musicxml";
-import { decode, frameRate, replay } from "./urmp";
+import { decode, frameRate, replay } from "./recording";
 
 async function main(folder?: string) {
   if (!folder) throw new Error("Usage: pnpm evaluate:label <folder>");

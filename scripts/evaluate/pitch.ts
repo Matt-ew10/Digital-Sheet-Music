@@ -2,7 +2,8 @@
 // annotations were corrected by hand. Usage: pnpm evaluate:pitch <URMP Dataset folder>
 import { readFile } from "node:fs/promises";
 import { windowSize } from "@/lib/audio/pitch";
-import { decode, frameRate, parse, replay, tracks } from "./urmp";
+import { tracks } from "../urmp/dataset";
+import { decode, frameRate, parse, replay } from "./recording";
 
 async function main(root?: string) {
   if (!root) {

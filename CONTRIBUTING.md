@@ -1,6 +1,6 @@
-# Development
+# Contributing
 
-How to set up, check, and deploy the app. How it works is in [architecture.md](architecture.md).
+How to set up, check, and deploy the app. How it works is in [docs/architecture.md](docs/architecture.md).
 
 ## Workflow
 
@@ -34,7 +34,7 @@ For audio changes, also run the evaluation below. Static checks cannot tell whet
 
 ## Evaluation
 
-Pitch detection and score following are judged by numbers, not by ear. Two scripts run the app's own code over recordings whose notes are known and report how often it is right.
+Pitch detection and score following are judged by numbers, not by ear. The scripts run the app's own code over recordings whose notes are known and report how often it is right.
 
 The recordings come from [URMP](https://labsites.rochester.edu/air/projects/URMP.html), released under CC0: chamber music recorded one part at a time, with pitch and note annotations corrected by hand and a MIDI score for each piece. Download `Dataset.tar.gz` (12 GB) from its [Zenodo record](https://zenodo.org/records/5034983) and extract it outside this repository. Do not commit the audio.
 
@@ -76,6 +76,16 @@ The true position at each moment is the score note being played, found by matchi
 | 90% lag         | The lag 90% of notes stay within                                          |
 
 Run it before and after a change to `src/lib/score/follow.ts`. It also prints each track's result, which shows where a change helps or hurts.
+
+### URMP on the score page
+
+To watch the follower on a URMP recording, write a MusicXML score next to every string part:
+
+```sh
+pnpm urmp:musicxml ~/datasets/urmp/Dataset
+```
+
+Open `Sco_<part>.musicxml` from a piece's folder with the folder button, then follow the matching `AuSep_<part>.wav` with **Recording**. The cursor follows the recording as it plays. Jupiter (violin or cello), Sonata (either violin), Hark (viola), and King (viola) follow cleanly; Spring's cello is the hardest case.
 
 ### The student's recordings
 

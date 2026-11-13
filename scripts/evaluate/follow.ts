@@ -3,8 +3,9 @@
 import { readFile } from "node:fs/promises";
 import { Midi } from "@tonejs/midi";
 import type { Note } from "@/lib/score/follow";
+import { tracks } from "../urmp/dataset";
 import { evaluate, percent, Score } from "./measure";
-import { decode, parse, replay, tracks } from "./urmp";
+import { decode, parse, replay } from "./recording";
 
 async function main(root?: string) {
   if (!root) {

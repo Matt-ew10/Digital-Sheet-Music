@@ -8,7 +8,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { Midi } from "@tonejs/midi";
-import { tracks } from "./evaluate/urmp";
+import { tracks } from "./dataset";
 
 async function main(root?: string) {
   if (!root) throw new Error("Usage: pnpm urmp:musicxml <URMP Dataset folder>");

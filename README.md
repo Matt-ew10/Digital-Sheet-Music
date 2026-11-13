@@ -34,9 +34,9 @@ The first target is single-line string playing: violin, viola, and cello.
   - `score/` reads a MusicXML score's notes from [OpenSheetMusicDisplay](https://opensheetmusicdisplay.org), follows the player through them, and sets up each condition's drawing.
 - `src/app/`, `src/components/`, and `src/hooks/` are the app's only page: the toolbar, the score, and the listening session that connects them.
 - `public/scores/` holds the experiment's excerpts for violin and viola, and `src/lib/score/list.ts` lists them for the score picker.
-- `scripts/evaluate/` measures pitch detection and score following against recordings whose notes are known.
+- `scripts/` holds development tools: `evaluate/` measures pitch detection and score following against recordings whose notes are known, and `urmp/` reads the URMP dataset.
 
-How the pieces work and why is in [docs/architecture.md](docs/architecture.md). How to run, check, and deploy is in [docs/development.md](docs/development.md).
+How the pieces work and why is in [docs/architecture.md](docs/architecture.md). How to run, check, and deploy is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Running locally
 
@@ -57,16 +57,6 @@ The person running a session:
 - picks the A4 the player tuned to (440 or 442 Hz; participants use 442). The choice is remembered on the device.
 - clicks a note before playing to start from its measure, for practicing part of a passage.
 - clicks a note while following, or uses the arrows beside the note number or the arrow keys, to put the cursor back on the player when it goes astray.
-
-### With real recordings
-
-The [URMP](https://labsites.rochester.edu/air/projects/URMP.html) dataset (CC0) has string parts recorded one at a time, each with its score. Download and extract it as described in [development.md](docs/development.md#evaluation), then write a MusicXML score next to every string part:
-
-```sh
-pnpm urmp:musicxml ~/datasets/urmp/Dataset
-```
-
-Open `Sco_<part>.musicxml` from a piece's folder with the folder button, then follow the matching `AuSep_<part>.wav` with **Recording**. The cursor follows the recording as it plays. Jupiter (violin or cello), Sonata (either violin), Hark (viola), and King (viola) follow cleanly; Spring's cello is the hardest case.
 
 ## Scores
 

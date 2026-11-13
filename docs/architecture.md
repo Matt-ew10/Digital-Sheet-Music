@@ -29,7 +29,7 @@ microphone or file → AnalyserNode → 2048 samples every frame → pitchy (McL
 
 ### Measured accuracy
 
-Measured on 2026-10-21 with `pnpm evaluate:pitch` over the URMP string tracks (violin 34, viola 13, cello 11, double bass 3; some recordings appear in two pieces), with the current settings. See [development.md](development.md#evaluation) for what each column means.
+Measured on 2026-10-21 with `pnpm evaluate:pitch` over the URMP string tracks (violin 34, viola 13, cello 11, double bass 3; some recordings appear in two pieces), with the current settings. See [CONTRIBUTING.md](../CONTRIBUTING.md#evaluation) for what each column means.
 
 | Instrument  | Heard | Correct | Octave errors | Median error |
 | ----------- | ----: | ------: | ------------: | -----------: |
@@ -101,7 +101,7 @@ Measured on 2026-11-06 with `pnpm evaluate:follow` over the URMP string tracks w
 
 URMP is played straight through, so restarts can only hurt there: without them the follower reaches 95.1% overall and 97.4% on viola. Allowing them costs about one point.
 
-The student's recordings, measured with `pnpm evaluate:student` over the 8 viola takes played correctly, against labels made by `pnpm evaluate:label` (see [development.md](development.md#the-students-recordings)). The labels come from the same detector, so "as recorded" is an upper bound.
+The student's recordings, measured with `pnpm evaluate:student` over the 8 viola takes played correctly, against labels made by `pnpm evaluate:label` (see [CONTRIBUTING.md](../CONTRIBUTING.md#the-students-recordings)). The labels come from the same detector, so "as recorded" is an upper bound.
 
 | Condition                     | Within one note |         Exact |          Lost | 90% lag |
 | ----------------------------- | --------------: | ------------: | ------------: | ------: |

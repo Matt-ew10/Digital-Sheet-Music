@@ -15,7 +15,7 @@ import type { Note } from "@/lib/score/follow";
 import { takes } from "./label";
 import { evaluate, percent, Score } from "./measure";
 import { readScore } from "./musicxml";
-import { decode, parse, replay } from "./urmp";
+import { decode, parse, replay } from "./recording";
 
 async function main(folder?: string) {
   if (!folder) throw new Error("Usage: pnpm evaluate:student <folder>");
