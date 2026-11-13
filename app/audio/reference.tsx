@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 import settings from "@/settings";
 
 // The A4 the player tuned to, chosen on the page and remembered on this device, so the person
-// running a session sets it once for both pages.
+// running a session sets it once.
 export function useReference() {
   const hz = useSyncExternalStore(subscribe, stored, () => settings.referenceHz);
 

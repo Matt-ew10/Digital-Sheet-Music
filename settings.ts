@@ -1,6 +1,6 @@
 // Values the experiment team tunes by playing. Changing them needs no other code change.
 const settings = {
-  // Frequency of A4 the player tuned to, in Hz. Both pages offer the choices; the default is
+  // Frequency of A4 the player tuned to, in Hz. The score page offers the choices; the default is
   // the one used until someone picks another. Participants tune to 442 before the experiment;
   // the student's practice recordings were made at 440. The two are 8 cents apart, more than
   // half of condition 5's tolerance.
@@ -15,10 +15,6 @@ const settings = {
   // higher values miss low notes. On URMP, 0.8 read 5 to 13 points more viola and cello notes
   // correctly than 0.9.
   minClarity: 0.8,
-
-  // The display summarizes readings from this many milliseconds. Longer is steadier
-  // but slower to follow a new note. Vibrato needs about 150 to 200.
-  smoothingMs: 200,
 
   // Condition 3, high contrast: colors of the notation and the page. The research plan asks for
   // more contrast with the same layout and size; how much more is the research team's call.

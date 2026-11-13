@@ -18,7 +18,7 @@ Scores are MusicXML files. The app does not grade performances; the conductor sc
 
 The prototype is built in stages, riskiest first:
 
-1. **Tuner** (done): microphone → pitch → note name and cents.
+1. **Pitch** (done): microphone or recording → pitch, measured against annotated recordings.
 2. **Score and cursor** (in progress): the score page renders MusicXML and a cursor follows the player (condition 2), including when they stop and start again from an earlier measure while practicing.
 3. **Pitch feedback**: color each note right or wrong (condition 5).
 4. **The rest**: high contrast, simplified layout, and recording (conditions 3 and 4).
@@ -30,8 +30,8 @@ The first target is single-line string playing: violin, viola, and cello.
 - Everything runs in the browser. There is no server: the site is a static export hosted on GitHub Pages, and nothing a participant plays leaves their device.
 - `settings.ts` holds the values the research team tunes by playing, such as the reference pitch. Change them there; no other code needs to change.
 - `app/audio/` reads audio from the microphone or a recorded file and detects pitch with [pitchy](https://github.com/ianprime0509/pitchy) (the McLeod pitch method).
-- `app/tuner/` shows those readings as note names and cents.
-- `app/score/` draws a MusicXML score with [OpenSheetMusicDisplay](https://opensheetmusicdisplay.org) and moves its cursor to follow the player.
+- `app/score/` draws a MusicXML score with [OpenSheetMusicDisplay](https://opensheetmusicdisplay.org) and moves its cursor to follow the player. It is the app's only page.
+- `public/scores/` holds the experiment's excerpts for violin and viola, and `app/score/scores.ts` lists them for the score picker.
 - `scripts/evaluate/` measures pitch detection and score following against recordings whose notes are known.
 
 How the pieces work and why is in [docs/architecture.md](docs/architecture.md). How to run, check, and deploy is in [docs/development.md](docs/development.md).
@@ -45,14 +45,16 @@ pnpm dev
 
 Open http://localhost:3000. Browsers allow the microphone only on `localhost` or HTTPS.
 
-To try either page without an instrument, choose **Play a recording** and pick an audio file. It is analyzed exactly like the microphone, so a recording of a passage is the easiest way to repeat the same test. The score page opens with a short sample (`public/score/sample.musicxml`); **Open MusicXML** loads any other `.musicxml` or `.mxl` file, whose first part is followed.
+The page opens with a short sample. The picker at the top left lists the experiment's excerpts by instrument and level; the folder button next to it opens any other `.musicxml` or `.mxl` file, whose first part is followed.
 
-On the score page, the person running a session:
+**Follow** starts the cursor from one of two sources, analyzed the same way: **Microphone** listens to the player, and **Recording** plays an audio file through the speakers. A recording of a passage is the easiest way to repeat the same test without an instrument.
+
+The person running a session:
 
 - picks one of the experiment's conditions (1 to 4; pitch feedback is not built yet). Colors for high contrast and spacing for the simplified layout are in `settings.ts`.
-- picks the A4 the player tuned to (440 or 442 Hz; participants use 442). The choice is remembered on the device and shared with the tuner page.
+- picks the A4 the player tuned to (440 or 442 Hz; participants use 442). The choice is remembered on the device.
 - clicks a note before playing to start from its measure, for practicing part of a passage.
-- clicks a note while listening, or uses ◀ ▶ or the arrow keys, to put the cursor back on the player when it goes astray.
+- clicks a note while following, or uses the arrows beside the note number or the arrow keys, to put the cursor back on the player when it goes astray.
 
 ### With real recordings
 
@@ -62,7 +64,19 @@ The [URMP](https://labsites.rochester.edu/air/projects/URMP.html) dataset (CC0) 
 pnpm urmp:musicxml ~/datasets/urmp/Dataset
 ```
 
-On the score page, open `Sco_<part>.musicxml` from a piece's folder with **Open MusicXML**, then play the matching `AuSep_<part>.wav` with **Play a recording**. The cursor follows the recording as it plays. Jupiter (violin or cello), Sonata (either violin), Hark (viola), and King (viola) follow cleanly; Spring's cello is the hardest case.
+Open `Sco_<part>.musicxml` from a piece's folder with the folder button, then follow the matching `AuSep_<part>.wav` with **Recording**. The cursor follows the recording as it plays. Jupiter (violin or cello), Sonata (either violin), Hark (viola), and King (viola) follow cleanly; Spring's cello is the hardest case.
+
+## Scores
+
+`public/scores/` holds the passages the student chose for the experiment, for violin and viola: 13 violin and 8 viola excerpts, from beginner to advanced. They are public-domain works, transcribed as pitches and rhythms only; fingerings, bowings, dynamics, and other markings from the printed editions are left out. The three pieces Shinichi Suzuki composed are not included.
+
+Still open with the research team:
+
+- The Seitz concertos start with the orchestra's introduction, and the Veracini sonata with six measures of rest.
+- The viola Bach Bourrée and Bach Gavotte end inside a repeated section, so the score page plays that section twice (210 and 142 notes) where the player plays it once.
+- Some measures still need a proofread against the printed parts.
+
+Cello excerpts are not in yet.
 
 ## Constraints
 

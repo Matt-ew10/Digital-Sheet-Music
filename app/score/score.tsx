@@ -8,12 +8,21 @@ import {
   type ChangeEvent,
   type MouseEvent,
 } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileAudio,
+  FolderOpen,
+  Mic,
+  Square,
+} from "lucide-react";
 import type { OpenSheetMusicDisplay } from "opensheetmusicdisplay";
 import { listen, microphone, recording } from "@/app/audio/listen";
 import { ReferencePicker, useReference } from "@/app/audio/reference";
 import settings from "@/settings";
 import { apply, conditions } from "./conditions";
 import { follower } from "./follow";
+import scores from "./scores";
 import { read } from "./sheet";
 
 export default function Score() {
@@ -24,19 +33,21 @@ export default function Score() {
   const followRef = useRef<ReturnType<typeof follower>>(undefined);
   const stepRef = useRef(0);
   const stopRef = useRef<() => void>(undefined);
-  const [title, setTitle] = useState<string>();
+  const [chosen, setChosen] = useState<string | undefined>(scores[0].file);
+  const [opened, setOpened] = useState<string>();
   const [count, setCount] = useState(0);
   const [condition, setCondition] = useState(1);
   const [from, setFrom] = useState(0);
   const [position, setPosition] = useState(-1);
-  const [listening, setListening] = useState(false);
+  const [source, setSource] = useState<string>();
   const [error, setError] = useState<string>();
   const [referenceHz, setReferenceHz] = useReference();
 
   // The cursor waits on the note playing starts from until the player gets there.
   const shown = Math.max(position, from);
+  const listening = source !== undefined;
 
-  const onSample = useEffectEvent(open);
+  const onChosen = useEffectEvent(open);
   const onCondition = useEffectEvent(draw);
   const onShown = useEffectEvent(place);
   const onKey = useEffectEvent((event: KeyboardEvent) => {
@@ -44,15 +55,17 @@ export default function Score() {
     if (event.key === "ArrowRight") move(shown + 1);
   });
 
-  // The sample sits next to this page, so a relative URL also works under GitHub Pages' path.
+  // Scores sit next to this page, so a relative URL also works under GitHub Pages' path.
   useEffect(() => {
-    fetch("sample.musicxml")
-      .then((response) => response.text())
-      .then(onSample)
-      .catch((cause) => setError(String(cause)));
+    if (!chosen) return;
 
-    return () => stopRef.current?.();
-  }, []);
+    fetch(`scores/${chosen}`)
+      .then((response) => response.text())
+      .then(onChosen)
+      .catch((cause) => setError(String(cause)));
+  }, [chosen]);
+
+  useEffect(() => () => stopRef.current?.(), []);
 
   useEffect(() => {
     window.addEventListener("keydown", onKey);
@@ -77,7 +90,6 @@ export default function Score() {
       await osmd.load(content);
       sheetRef.current = undefined;
       draw();
-      setTitle(osmd.Sheet.TitleString);
       setCount(sheetRef.current!.notes.length);
       setFrom(0);
     } catch (cause) {
@@ -103,7 +115,7 @@ export default function Score() {
     else osmd.cursor.hide();
   }
 
-  async function start(source: Parameters<typeof listen>[0]) {
+  async function start(open: Parameters<typeof listen>[0], name: string) {
     const sheet = sheetRef.current;
 
     if (!sheet) return;
@@ -121,10 +133,10 @@ export default function Score() {
     followRef.current = follow;
 
     try {
-      stopRef.current = await listen(source, (reading, time) => {
+      stopRef.current = await listen(open, (reading, time) => {
         setPosition(follow.read(time, reading?.hz));
       });
-      setListening(true);
+      setSource(name);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -134,7 +146,7 @@ export default function Score() {
     stopRef.current?.();
     stopRef.current = undefined;
     followRef.current = undefined;
-    setListening(false);
+    setSource(undefined);
     setPosition(-1);
   }
 
@@ -212,114 +224,157 @@ export default function Score() {
   function onScore(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
-    if (file) void open(file);
+    if (file) {
+      setChosen(undefined);
+      setOpened(file.name);
+      void open(file);
+    }
     event.target.value = "";
   }
 
   function onRecording(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
-    if (file) void start(recording(file));
+    if (file) void start(recording(file), file.name);
     event.target.value = "";
   }
 
   const page = conditions[condition].contrast
     ? settings.contrast.page
     : "#ffffff";
+  const groups = [...new Set(scores.map((score) => score.group))];
 
   return (
-    <div className="flex w-full flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <label className={button}>
-          Open MusicXML
-          <input
-            className="hidden"
-            type="file"
-            accept=".musicxml,.xml,.mxl"
-            onChange={onScore}
-          />
-        </label>
+    <div className="flex h-dvh flex-col">
+      <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-zinc-200 px-4 py-2 text-sm dark:border-zinc-800">
+        <div className="flex items-center gap-1">
+          <select
+            className={control}
+            aria-label="Score"
+            value={chosen ?? ""}
+            disabled={listening}
+            onChange={(event) => setChosen(event.target.value)}
+          >
+            {opened && !chosen && <option value="">{opened}</option>}
+            {groups.map((group) => (
+              <optgroup key={group} label={group}>
+                {scores
+                  .filter((score) => score.group === group)
+                  .map((score) => (
+                    <option key={score.file} value={score.file}>
+                      {score.title} ({score.composer})
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
 
-        <select
-          className={button}
-          value={condition}
-          disabled={listening}
-          onChange={(event) => setCondition(Number(event.target.value))}
-        >
-          {conditions.map((option, index) => (
-            <option key={option.name} value={index}>
-              {index + 1}. {option.name}
-            </option>
-          ))}
-        </select>
+          <label className={icon} title="Open a MusicXML file">
+            <FolderOpen size={18} aria-label="Open a MusicXML file" />
+            <input
+              className="hidden"
+              type="file"
+              accept=".musicxml,.xml,.mxl"
+              disabled={listening}
+              onChange={onScore}
+            />
+          </label>
+        </div>
 
-        <ReferencePicker
-          className={button}
-          hz={referenceHz}
-          disabled={listening}
-          onChange={setReferenceHz}
-        />
-      </div>
+        {/* One action, two sources: the cursor follows whatever it hears. */}
+        <div className="flex items-center gap-2">
+          <span className="text-zinc-500">Follow</span>
 
-      <div className="flex flex-wrap items-center gap-3">
-        {listening ? (
-          <button className={button} onClick={stop}>
-            Stop
+          {listening ? (
+            <button className={`${segment} rounded-full`} onClick={stop}>
+              <Square size={14} fill="currentColor" />
+              Stop
+              <span className="max-w-40 truncate text-zinc-500">{source}</span>
+            </button>
+          ) : (
+            <div className="flex">
+              <button
+                className={`${segment} rounded-l-full`}
+                onClick={() => start(microphone, "Microphone")}
+              >
+                <Mic size={16} />
+                Microphone
+              </button>
+              <label className={`${segment} -ml-px rounded-r-full`}>
+                <FileAudio size={16} />
+                Recording
+                <input
+                  className="hidden"
+                  type="file"
+                  accept="audio/*"
+                  onChange={onRecording}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            className={icon}
+            aria-label="Previous note"
+            onClick={() => move(shown - 1)}
+          >
+            <ChevronLeft size={18} />
           </button>
-        ) : (
-          <button className={button} onClick={() => start(microphone)}>
-            Use microphone
+          <span className="min-w-24 text-center tabular-nums">
+            {listening ? "Note" : "Start at"} {shown + 1}
+            {count > 0 && ` of ${count}`}
+          </span>
+          <button
+            className={icon}
+            aria-label="Next note"
+            onClick={() => move(shown + 1)}
+          >
+            <ChevronRight size={18} />
           </button>
-        )}
+        </div>
 
-        <label className={button}>
-          Play a recording
-          <input
-            className="hidden"
-            type="file"
-            accept="audio/*"
-            onChange={onRecording}
+        <div className="ml-auto flex items-center gap-2">
+          <select
+            className={control}
+            aria-label="Condition"
+            value={condition}
+            disabled={listening}
+            onChange={(event) => setCondition(Number(event.target.value))}
+          >
+            {conditions.map((option, index) => (
+              <option key={option.name} value={index}>
+                {index + 1}. {option.name}
+              </option>
+            ))}
+          </select>
+
+          <ReferencePicker
+            className={control}
+            hz={referenceHz}
+            disabled={listening}
+            onChange={setReferenceHz}
           />
-        </label>
+        </div>
 
-        <button
-          className={button}
-          aria-label="Previous note"
-          onClick={() => move(shown - 1)}
-        >
-          ◀
-        </button>
-        <button
-          className={button}
-          aria-label="Next note"
-          onClick={() => move(shown + 1)}
-        >
-          ▶
-        </button>
+        {error && <p className="w-full text-red-600">{error}</p>}
+      </header>
 
-        <span className="text-sm text-zinc-500">
-          {title && `${title}: `}
-          {listening ? "note" : "starts at note"} {shown + 1}
-          {count > 0 && ` of ${count}`}
-        </span>
-      </div>
-
-      {error && <p className="text-red-600">{error}</p>}
-
-      <p className="text-sm text-zinc-500">
-        Click a note to start from its measure, or, while listening, to put the
-        cursor there. The arrow keys move one note.
-      </p>
-
-      <div
+      <main
         ref={containerRef}
-        className="cursor-pointer rounded-lg p-2"
+        className="min-h-0 flex-1 cursor-pointer overflow-auto p-2"
         style={{ background: page }}
+        title="Click a note to start from its measure, or, while following, to put the cursor there. The arrow keys move one note."
         onClick={onPick}
       />
     </div>
   );
 }
 
-const button =
-  "cursor-pointer rounded-full border border-zinc-300 px-5 py-2.5 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900";
+const control =
+  "h-9 cursor-pointer rounded-full border border-zinc-300 bg-transparent px-3 hover:bg-zinc-100 disabled:cursor-default disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-900";
+const icon =
+  "flex size-9 cursor-pointer items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900";
+const segment =
+  "flex h-9 cursor-pointer items-center gap-2 border border-zinc-300 px-4 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900";

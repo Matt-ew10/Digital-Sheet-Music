@@ -46,10 +46,7 @@ Both scripts read every violin, viola, cello, and double bass track and print on
 pnpm evaluate:pitch ~/datasets/urmp/Dataset
 ```
 
-Each instrument has two rows:
-
-- **raw**: single readings, compared with the annotated pitch at the center of each reading. This measures the detector.
-- **display**: what the tuner shows at each moment, compared with the pitch of the note being played. This includes the delay of `smoothingMs`.
+Each reading is compared with the annotated pitch at the center of its window.
 
 | Column       | Meaning                                                                      |
 | ------------ | ---------------------------------------------------------------------------- |
@@ -60,7 +57,7 @@ Each instrument has two rows:
 | median error | For correct readings, the typical distance from the true pitch, in cents     |
 | 90% error    | For correct readings, the distance 90% of them stay within, in cents         |
 
-Run it before and after a change to `settings.ts` or `app/tuner/pitch.ts`, and keep the change only if the numbers improve.
+Run it before and after a change to `settings.ts` or `app/audio/pitch.ts`, and keep the change only if the numbers improve.
 
 ### Score following
 
@@ -122,4 +119,4 @@ Scores are read with a small reader in `scripts/evaluate/musicxml.ts`, not with 
 
 ## Commits
 
-Use [Conventional Commits](https://www.conventionalcommits.org/): `type: subject`, with a short English subject and no body. For example, `feat: add tuner page` or `fix: wrong octave below C4`. Keep one concern per commit.
+Use [Conventional Commits](https://www.conventionalcommits.org/): `type: subject`, with a short English subject and no body. For example, `feat: add score picker` or `fix: wrong octave below C4`. Keep one concern per commit.

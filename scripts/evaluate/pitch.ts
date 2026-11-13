@@ -1,8 +1,7 @@
-// Measures the tuner against the string tracks of the URMP dataset, whose pitch
+// Measures pitch detection against the string tracks of the URMP dataset, whose pitch
 // annotations were corrected by hand. Usage: pnpm evaluate:pitch <URMP Dataset folder>
 import { readFile } from "node:fs/promises";
-import { steady, windowSize } from "@/app/audio/pitch";
-import settings from "@/settings";
+import { windowSize } from "@/app/audio/pitch";
 import { decode, frameRate, parse, replay, tracks } from "./urmp";
 
 async function main(root?: string) {
@@ -10,72 +9,39 @@ async function main(root?: string) {
     throw new Error("Usage: pnpm evaluate:pitch <URMP Dataset folder>");
   }
 
-  const totals = new Map<string, { raw: Score; display: Score }>();
+  const totals = new Map<string, Score>();
 
   for (const track of await tracks(root)) {
     const { samples, sampleRate } = decode(await readFile(track.audio));
     const frames = parse(await readFile(track.frames, "utf8"));
-    const notes = parse(await readFile(track.notes, "utf8"));
-    const result = evaluate(samples, sampleRate, frames, notes);
-    const total = totals.get(track.instrument) ?? {
-      raw: new Score(),
-      display: new Score(),
-    };
+    const result = evaluate(samples, sampleRate, frames);
+    const total = totals.get(track.instrument) ?? new Score();
 
-    total.raw.add(result.raw);
-    total.display.add(result.display);
+    total.add(result);
     totals.set(track.instrument, total);
-    console.log(
-      `${track.name}: ${percent(result.display.correct, result.display.voiced)} correct`,
-    );
+    console.log(`${track.name}: ${percent(result.correct, result.voiced)} correct`);
   }
 
   console.table(
-    [...totals].flatMap(([instrument, total]) => [
-      { track: `${instrument} raw`, ...total.raw.summary() },
-      { track: `${instrument} display`, ...total.display.summary() },
-    ]),
+    [...totals].map(([instrument, total]) => ({ instrument, ...total.summary() })),
   );
 }
 
-// The browser reads the newest window once per animation frame and shows a summary of the
-// readings from the last `smoothingMs`. Both are scored at every annotated frame.
-// - Raw readings measure the detector: the reading whose window is centered on the frame,
-//   compared with the frame's pitch.
-// - The display measures what the player sees: what is on screen at that moment, compared with
-//   the pitch of the note being played, so its delay counts as error. It shows the center of
-//   vibrato on purpose, so the note's pitch is the target, not the frame's.
-function evaluate(
-  samples: Float32Array,
-  sampleRate: number,
-  frames: number[][],
-  notes: number[][],
-) {
+// The browser reads the newest window once per animation frame. Each annotated frame is
+// compared with the reading whose window is centered on it.
+function evaluate(samples: Float32Array, sampleRate: number, frames: number[][]) {
   const readings = replay(samples, sampleRate);
-  const span = Math.round((settings.smoothingMs / 1000) * frameRate);
   const half = windowSize / 2 / sampleRate;
   const last = readings.length - 1;
-  const raw = new Score();
-  const display = new Score();
+  const result = new Score();
 
   for (const [time, hz] of frames) {
     const centered = Math.min(Math.round((time + half) * frameRate), last);
-    const frame = Math.min(Math.floor(time * frameRate), last);
-    const recent = readings
-      .slice(Math.max(0, frame - span + 1), frame + 1)
-      .filter((reading) => reading !== undefined);
-    const note = notes.find(
-      ([onset, , duration]) => time >= onset && time < onset + duration,
-    );
 
-    raw.count(hz, readings[centered]?.hz);
-    display.count(
-      note?.[1] ?? 0,
-      recent.length ? steady(recent.map((reading) => reading.hz)) : undefined,
-    );
+    result.count(hz, readings[centered]?.hz);
   }
 
-  return { raw, display };
+  return result;
 }
 
 class Score {

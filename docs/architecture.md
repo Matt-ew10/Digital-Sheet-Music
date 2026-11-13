@@ -9,49 +9,38 @@ The app is a static export on GitHub Pages. There is no server and no database.
 - Recordings of participants, some of whom have disabilities, never leave the device. Keeping it that way removes most privacy concerns, so do not add an upload without the research team agreeing.
 - Browsers allow the microphone only over HTTPS, which GitHub Pages provides.
 - GitHub Pages serves a project site under `/<repository>/`. The deploy workflow reads that path from GitHub and passes it to `next.config.ts` as `PAGES_BASE_PATH`.
-- `trailingSlash` is on. Without it, the export writes `tuner.html` next to a `tuner/` folder, and GitHub Pages answers `/tuner` with a redirect to the folder, which has no page.
+- `trailingSlash` is on, so a page at `/<name>` is exported as `<name>/index.html`. Without it, the export writes `<name>.html` next to a `<name>/` folder, and GitHub Pages answers `/<name>` with a redirect to the folder, which has no page. The app has one page now, but scores sit in folders beside it.
 
 > Links made with `next/link` get the base path automatically. A file path written by hand (a `fetch` of a score, an AudioWorklet module) does not, and will break on GitHub Pages only.
 
 ## Reading pitch
 
 ```
-microphone or file → AnalyserNode → 2048 samples every frame → pitchy (McLeod) → Hz and clarity → nearest note and cents
+microphone or file → AnalyserNode → 2048 samples every frame → pitchy (McLeod) → Hz and clarity → score follower
 ```
 
 - The microphone is opened with echo cancellation, noise suppression, and automatic gain control off. They are designed for speech and distort instrument sound.
 - Each reading looks at 2048 samples (about 43 ms at 48 kHz). Detection needs about two periods of the lowest note; this holds nearly three periods of C2, the cello's lowest note. A longer window reaches lower notes but reacts later.
-- A reading counts as a note only if it is louder than `minVolumeDb` and clearer than `minClarity` (both in `settings.ts`). Otherwise the display shows a dash.
+- A reading counts as a note only if it is louder than `minVolumeDb` and clearer than `minClarity` (both in `settings.ts`). Otherwise there is no reading, which the follower treats as silence.
   - Clarity decides most misses. Low strings often read below 0.9 because their overtones are strong; 0.8 recovers most of them at the cost of more readings between notes. Going lower gains little (see the table below).
   - Loudness cannot tell notes from gaps in URMP: frames annotated as silent are about as loud as played ones, because they are mostly releases and ringing. The volume gate only catches true silence.
-- The display does not show single readings, which jump with vibrato, bow noise, and room echo. From the readings of the last `smoothingMs`, it takes the median of the newest five as the note now sounding, drops readings more than 50 cents from it, and averages the rest in cents.
-  - A new note shows after three readings (50 ms). An earlier version used the median of the whole window and showed the previous note for about 100 ms after each change.
-  - Octave errors lasting one or two readings are outvoted. Longer ones show.
-  - With a ±30 cent vibrato at 6 Hz, the needle moves within about ±15 cents.
-- Notes are named from the A4 the player tuned to, picked on the tuner and score pages from `referenceChoices` and remembered on the device (`app/audio/reference.tsx`). Participants tune to 442 Hz before the experiment, but the student's practice recordings were made at 440 Hz. With the wrong choice every note reads 8 cents off, more than half of condition 5's 15-cent tolerance. The follower rounds to semitones, so following is not affected. The URMP evaluation always uses 440 Hz, which URMP is tuned to.
+- Notes are named from the A4 the player tuned to, picked on the score page from `referenceChoices` and remembered on the device (`app/audio/reference.tsx`). Participants tune to 442 Hz before the experiment, but the student's practice recordings were made at 440 Hz. With the wrong choice every note reads 8 cents off, more than half of condition 5's 15-cent tolerance. The follower rounds to semitones, so following is not affected. The URMP evaluation always uses 440 Hz, which URMP is tuned to.
 - The `AudioContext` is created synchronously in the click handler. Safari only lets audio start inside the user's gesture.
 
 ### Measured accuracy
 
-Measured on 2026-10-21 with `pnpm evaluate` over the URMP string tracks (violin 34, viola 13, cello 11, double bass 3; some recordings appear in two pieces), with the current settings. See [development.md](development.md#evaluation) for what each column means.
+Measured on 2026-10-21 with `pnpm evaluate:pitch` over the URMP string tracks (violin 34, viola 13, cello 11, double bass 3; some recordings appear in two pieces), with the current settings. See [development.md](development.md#evaluation) for what each column means.
 
-| Instrument  | Heard | Correct | Octave errors | Median error | Display correct | Display false alarm |
-| ----------- | ----: | ------: | ------------: | -----------: | --------------: | ------------------: |
-| Violin      | 96.2% |   92.1% |          2.1% |    0.9 cents |           83.1% |               62.7% |
-| Viola       | 87.9% |   73.2% |          9.5% |    1.4 cents |           70.9% |               80.5% |
-| Cello       | 90.2% |   76.7% |          5.5% |    1.4 cents |           72.3% |               73.4% |
-| Double bass | 95.1% |   88.4% |          3.8% |    1.1 cents |           84.8% |               61.5% |
+| Instrument  | Heard | Correct | Octave errors | Median error |
+| ----------- | ----: | ------: | ------------: | -----------: |
+| Violin      | 96.2% |   92.1% |          2.1% |    0.9 cents |
+| Viola       | 87.9% |   73.2% |          9.5% |    1.4 cents |
+| Cello       | 90.2% |   76.7% |          5.5% |    1.4 cents |
+| Double bass | 95.1% |   88.4% |          3.8% |    1.1 cents |
 
-How each change moved the numbers (correct readings, then display correct):
+`minClarity` 0.9 → 0.8 raised correct readings from 89.2, 67.8, and 64.1% to 92.1, 73.2, and 76.7% (violin, viola, cello).
 
-| Change                              | Violin      | Viola       | Cello       |
-| ----------------------------------- | ----------- | ----------- | ----------- |
-| Start: clarity 0.9, window median   | 89.2 / 75.2 | 67.8 / 67.9 | 64.1 / 66.9 |
-| `minClarity` 0.9 → 0.8              | 92.1 / 74.9 | 73.2 / 67.8 | 76.7 / 69.1 |
-| Display anchored on newest readings | 92.1 / 83.1 | 73.2 / 70.9 | 76.7 / 72.3 |
-
-- When a reading is right, it is very precise. What remains is octave errors, worst on viola (mostly an octave too high) and cello (mostly too low).
-- The display's false alarms come from holding the last note for `smoothingMs` after it ends, including short gaps between detached notes.
+When a reading is right, it is very precise. What remains is octave errors, worst on viola (mostly an octave too high) and cello (mostly too low).
 
 Tried and not kept, each measured on the same tracks:
 
@@ -61,7 +50,6 @@ Tried and not kept, each measured on the same tracks:
 | pitchy peak ratio (`clarityThreshold`) 0.95 or 0.8          | Each fixes one instrument's octave errors and adds to the other's    |
 | A louder volume gate (-45 dB or more)                       | Drops played notes as fast as it drops readings between notes        |
 | Spectral octave check (energy between and at the harmonics) | At most 0.5 points better on any instrument                          |
-| Anchoring on the newest three readings                      | 1 to 2.5 points better display, but three-reading octave errors show |
 
 Octave errors need context a single window does not have. The score follower has it: it knows the expected note and counts an octave error as a weaker match, not a different note.
 
