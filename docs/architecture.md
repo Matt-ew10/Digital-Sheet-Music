@@ -69,7 +69,7 @@ The follower keeps, for every score note and every length of time the player may
 - **Jumps.** Moving on skips a note with chance 0.05 (a player's mistake). After a pause, the player may go back to the first note of a measure (chance 0.05), most likely one of the last few measures; the beginning of the piece counts as much as two measures back.
 - **Pace.** Moving on to the next note measures how much slower than written the player went. Repeated notes do not count: the model's own timing decides when they change, so they would measure the model.
 
-The cursor goes to the most likely note. A wrong note does not stop it: time moves the odds on, so the cursor keeps up with the player. It does not reliably stay on the wrong note, though (see below), which condition 5 will need.
+The cursor goes to the most likely note. A wrong note does not stop it: time moves the odds on, so the cursor keeps up with the player. It does not reliably stay on the wrong note, though (see below), so the pitch judge does not rely on it alone.
 
 The odds are kept for each note up to nine times its written length (pace at most three times slower, then three times longer). A score of 150 notes is about 20,000 numbers updated 60 times a second.
 
@@ -119,7 +119,7 @@ After a restart the cursor is back within one note of the player within a second
 
 Targets set for the experiment, and where they stand: within one note at least 95% (student takes yes; URMP violin 94.1% no), lost at most 1% (student takes yes except restarts, 2.0%; URMP violin 3.8% no), 90% lag at most 150 ms (yes, except URMP cello), back within a second after a restart (22 of 24).
 
-On wrong notes alone, the cursor is not yet good enough for condition 5. With isolated wrong notes in the score (about one in twelve, judged from 150 ms into the note), the cursor sat on the wrong note 62% of the time for a semitone up, and 28 to 30% for a whole tone down or a fourth up. It mostly ran ahead (29 to 55%) to a later note with the pitch it heard, since a wrong note that matches the next written pitch looks the same as playing ahead. Judging a note will need its own timing, not only the cursor.
+On wrong notes alone, the cursor is not yet good enough for condition 5. With isolated wrong notes in the score (about one in twelve, judged from 150 ms into the note), the cursor sat on the wrong note 62% of the time for a semitone up, and 28 to 30% for a whole tone down or a fourth up. It mostly ran ahead (29 to 55%) to a later note with the pitch it heard, since a wrong note that matches the next written pitch looks the same as playing ahead. The judge therefore places sounds by strokes as well (see Pitch feedback below).
 
 Cello remains the weakest, mostly **Spring** (67%: long repeated E3s whose readings drop out mid-note) and **Pirates** and **Maria** (75% and 88%: fast repeated low notes the detector cannot read). Cello is out of scope until its excerpts arrive.
 
@@ -145,12 +145,42 @@ Tried and not kept:
 
 The person running a session can correct the cursor by hand, so the follower does not need to be perfect.
 
-### Ahead for pitch feedback
+### Pitch feedback
 
-- **Vibrato**: pitch wobbles five to seven times a second, so judge a note by the median over about 0.15 to 0.2 seconds.
-- **Bow attack**: the first tens of milliseconds of a note are noisy and should not be judged.
-- **Confidence**: the follower knows how likely its note is. Judge a note only when that is high, so that a correct note is not marked wrong.
-- **Which note was wrong**: the cursor often runs ahead on a wrong note (above), so the judge should place a held pitch by the time it was played, not by where the cursor is a moment later.
+`src/lib/score/judge.ts` marks notes played out of tune. It runs beside the follower and takes the follower's position with each reading.
+
+- **Held sounds.** Readings are grouped into sounds by pitch and silence: a gap or a jump of more than a quarter tone starts a new one. A sound is judged once 0.04 seconds of bow attack have passed and it has been held 0.1 seconds more, by its median pitch with octaves folded away, so vibrato and the detector's octave errors are not mistakes. Shorter sounds are not judged.
+- **Tolerance.** Within 15 cents a note is right; beyond 25 it is wrong; between the two it is not judged, since a false mark on a correct note is worse than a missed one.
+- **Which note.** A sound belongs to the follower's note, except that a new stroke on a note that already has its verdict, once 80% of its written length has passed, belongs to the next note. The follower is then behind, or held back because the wrong pitch matches the note before. The follower's position alone placed only half of the wrong notes on the right note (above).
+- **Clearing.** A wrong verdict holds for that pass over the note; a right verdict on a later pass, as when the passage is practiced again, clears the mark.
+
+Measured on 2026-11-13 with `pnpm evaluate:judge` over the 8 correct viola takes. The takes are not perfectly in tune: measured over each whole note, 12.6% of notes are more than 15 cents off (18.3% of notes under 0.25 seconds, 2.6% of notes of half a second or more; 0 to 2% in the beginner pieces, 6 to 17% in the intermediate ones). One note in ten was moved by 30, 50, or 100 cents to make mistakes with known places.
+
+| Tolerance (right / wrong) | Judged | Marked as recorded | Marked though within 15 cents | 30 cents caught | 50 cents caught | 100 cents caught |
+| ------------------------- | ------ | ------------------ | ----------------------------- | --------------- | --------------- | ---------------- |
+| 15 / 25 (the setting)     | 80.0%  | 3.9%               | 0.3%                          | 86%             | 82%             | 73%              |
+| 12 / 18                   | 77.1%  | 8.1%               | 0.8%                          | 87%             | 83%             | 73%              |
+| 15 / 20                   | 82.3%  | 6.2%               | 0.4%                          | 82%             | 83%             | 73%              |
+| 20 / 30                   | 84.3%  | 2.3%               | 0.3%                          | 85%             | 83%             | 73%              |
+
+In practice, with a note played 50 cents off and the passage played again in tune from the measure before, 12 of 14 marks cleared.
+
+How the judge got there, at 15 / 25 unless noted:
+
+| Change                                                  | Result                                                         |
+| ------------------------------------------------------- | -------------------------------------------------------------- |
+| First version: 12 / 18, a sound cut whenever the follower moved, held 0.15 s | Marked as recorded 5.1%; 100 cents caught 51%   |
+| Sounds cut only by pitch and silence                    | 100 cents caught 51 → 58%                                      |
+| Held 0.1 s after a 0.04 s attack, 15 / 25               | Judged 65 → 80%; 30 cents caught 86%; 100 cents 67%            |
+| A new stroke after 80% of the note is the next note     | 50 cents 76 → 82%, 100 cents 67 → 73%, no more false marks     |
+
+Tried and not kept: holding only 0.06 s (false marks 0.3 → 1.9%); a new stroke as the next note at any time (false marks 0.3 → 1.4%).
+
+Still open:
+
+- The reference is the same detector's readings over the whole note, with labels not yet checked by ear. Whether a marked note sounds out of tune is for a listener to confirm.
+- 27% of wrong notes are missed, mostly when the wrong pitch matches a neighbouring note.
+- On the incorrect takes the judge marks 10 to 65 notes each. Some takes are tuned 20 to 30 cents flat throughout, and some skip repeats the score has, so those lists are not yet a check of the judge.
 
 ## Designs not adopted
 

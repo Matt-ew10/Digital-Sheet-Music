@@ -3,14 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { listen } from "@/lib/audio/listen";
 import type { follower } from "@/lib/score/follow";
+import type { judge } from "@/lib/score/judge";
 
-// Feeds one audio source at a time to a score follower: the source's name while it plays, and
-// the note the follower puts the player on (-1 before the first).
+// Feeds one audio source at a time to a score follower, and to a pitch judge when one is given:
+// the source's name while it plays, the note the follower puts the player on (-1 before the
+// first), and the notes the judge marks wrong.
 export function useListening() {
   const stopRef = useRef<() => void>(undefined);
   const followRef = useRef<ReturnType<typeof follower>>(undefined);
   const [source, setSource] = useState<string>();
   const [position, setPosition] = useState(-1);
+  const [marks, setMarks] = useState<ReadonlySet<number>>(new Set());
 
   useEffect(() => () => stopRef.current?.(), []);
 
@@ -18,6 +21,7 @@ export function useListening() {
     open: Parameters<typeof listen>[0],
     name: string,
     follow: ReturnType<typeof follower>,
+    judgement?: ReturnType<typeof judge>,
   ) {
     stop();
 
@@ -26,7 +30,10 @@ export function useListening() {
 
     try {
       stopRef.current = await listen(open, (reading, time) => {
-        setPosition(follow.read(time, reading?.hz));
+        const position = follow.read(time, reading?.hz);
+
+        setPosition(position);
+        if (judgement?.read(time, reading?.hz, position)) setMarks(new Set(judgement.marks));
       });
     } catch (cause) {
       followRef.current = undefined;
@@ -42,6 +49,7 @@ export function useListening() {
     followRef.current = undefined;
     setSource(undefined);
     setPosition(-1);
+    setMarks(new Set());
   }
 
   // The person running the session says the player is on `note`.
@@ -52,5 +60,5 @@ export function useListening() {
     setPosition(note);
   }
 
-  return { source, position, start, stop, seek };
+  return { source, position, marks, start, stop, seek };
 }

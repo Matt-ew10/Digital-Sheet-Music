@@ -16,6 +16,22 @@ const settings = {
   // correctly than 0.9.
   minClarity: 0.8,
 
+  // Pitch feedback, switched on in the toolbar: a note is right within `right` cents of its
+  // written pitch and wrong beyond `wrong`; between the two it is not judged, since a false mark
+  // is worse than a missed one. A sound is judged after `attack` seconds of bow attack and
+  // `hold` seconds held, and a new stroke counts as the next note once `strokes` of the note's
+  // written length has passed. Wrong notes are drawn in `color`. Measured with
+  // `pnpm evaluate:judge`: on the student's correct takes, 15/25 marks 3.9% of notes; 12/18
+  // marks 8.1%.
+  feedback: {
+    right: 15,
+    wrong: 25,
+    attack: 0.04,
+    hold: 0.1,
+    strokes: 0.8,
+    color: "#dc2626",
+  },
+
   // Condition 3, high contrast: colors of the notation and the page. The research plan asks for
   // more contrast with the same layout and size; how much more is the research team's call.
   contrast: { notation: "#ffffff", page: "#000000" },

@@ -12,6 +12,8 @@ A web app that shows sheet music to string players in five conditions, built for
 | 4   | Simplified      | Wider spacing between measures and notes                                    |
 | 5   | Pitch feedback  | Condition 2, with each played note colored by whether its pitch was in tune |
 
+In the app, condition 5 is condition 2 with the **Pitch feedback** switch on.
+
 Scores are MusicXML files. The app does not grade performances; the conductor scores them with a rubric.
 
 ## Status
@@ -20,7 +22,7 @@ The prototype is built in stages, riskiest first:
 
 1. **Pitch** (done): microphone or recording → pitch, measured against annotated recordings.
 2. **Score and cursor** (in progress): the score page renders MusicXML and a cursor follows the player (condition 2), including when they stop and start again from an earlier measure while practicing.
-3. **Pitch feedback**: color each note right or wrong (condition 5).
+3. **Pitch feedback** (in progress): notes played out of tune turn red, and clear when the passage is played again in tune (condition 5). Measured on the student's takes; not yet checked by ear.
 4. **The rest**: high contrast, simplified layout, and recording (conditions 3 and 4).
 
 The first target is single-line string playing: violin, viola, and cello.
@@ -53,7 +55,7 @@ The page opens with a short sample. The picker at the top left lists the experim
 
 The person running a session:
 
-- picks one of the experiment's conditions (1 to 4; pitch feedback is not built yet). Colors for high contrast and spacing for the simplified layout are in `src/settings.ts`.
+- picks one of the experiment's conditions (1 to 4), and turns on **Pitch feedback** for condition 5. Colors for high contrast, spacing for the simplified layout, and the pitch tolerance are in `src/settings.ts`.
 - picks the A4 the player tuned to (440 or 442 Hz; participants use 442). The choice is remembered on the device.
 - clicks a note before playing to start from its measure, for practicing part of a passage.
 - clicks a note while following, or uses the arrows beside the note number or the arrow keys, to put the cursor back on the player when it goes astray.

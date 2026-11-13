@@ -2,17 +2,21 @@
 
 import { useEffect, useEffectEvent, useRef, type MouseEvent } from "react";
 import { cn } from "cn";
-import type { OpenSheetMusicDisplay } from "opensheetmusicdisplay";
+import type {
+  OpenSheetMusicDisplay,
+  VexFlowGraphicalNote,
+} from "opensheetmusicdisplay";
 import { apply, type Condition } from "@/lib/score/conditions";
 import { read, type Sheet } from "@/lib/score/read";
 import settings from "@/settings";
 
-// Draws a MusicXML score for one condition and keeps its cursor on `note`. Reports the score's
-// notes once it is drawn, and which note a click lands on.
+// Draws a MusicXML score for one condition, keeps its cursor on `note`, and colors the notes in
+// `marks`. Reports the score's notes once it is drawn, and which note a click lands on.
 export default function Score({
   content,
   condition,
   note,
+  marks,
   onLoad,
   onPick,
   onError,
@@ -22,10 +26,12 @@ export default function Score({
   const osmdRef = useRef<OpenSheetMusicDisplay>(undefined);
   const sheetRef = useRef<Sheet>(undefined);
   const stepRef = useRef(0);
+  const paintedRef = useRef<SVGElement[]>([]);
 
   const onContent = useEffectEvent(load);
   const onCondition = useEffectEvent(draw);
   const onNote = useEffectEvent(place);
+  const onMarks = useEffectEvent(paint);
 
   useEffect(() => {
     if (content) void onContent(content);
@@ -33,6 +39,9 @@ export default function Score({
 
   useEffect(() => onCondition(), [condition]);
   useEffect(() => onNote(note), [note]);
+  // OSMD redraws the page itself when the window is resized, which drops the colors, so they
+  // are put back as the cursor moves too.
+  useEffect(() => onMarks(), [marks, note]);
 
   async function load(content: string | Blob) {
     try {
@@ -68,6 +77,36 @@ export default function Score({
 
     if (condition.cursor) osmd.cursor.show();
     else osmd.cursor.hide();
+
+    paint();
+  }
+
+  // Colors the marked notes. A note inside a repeat is printed once, so a mark on either time
+  // through colors it.
+  function paint() {
+    const osmd = osmdRef.current;
+    const sheet = sheetRef.current;
+
+    for (const element of paintedRef.current) {
+      element.style.fill = "";
+      element.style.stroke = "";
+    }
+    paintedRef.current = [];
+
+    if (!osmd || !sheet) return;
+
+    for (const marked of marks) {
+      for (const printed of sheet.places[marked]?.printed ?? []) {
+        const graphical = osmd.EngravingRules.GNote(printed) as VexFlowGraphicalNote | undefined;
+        const group = graphical?.getSVGGElement();
+
+        for (const element of group?.querySelectorAll("path") ?? []) {
+          element.style.fill = settings.feedback.color;
+          element.style.stroke = settings.feedback.color;
+          paintedRef.current.push(element);
+        }
+      }
+    }
   }
 
   // OSMD's cursor only steps forward, so moving back starts over from the beginning.
@@ -147,6 +186,7 @@ interface Props {
   content?: string | Blob;
   condition: Condition;
   note: number;
+  marks: ReadonlySet<number>;
   onLoad: (sheet: Sheet) => void;
   onPick: (note: number) => void;
   onError: (message: string) => void;

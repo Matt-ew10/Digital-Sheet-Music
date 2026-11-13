@@ -18,6 +18,7 @@ import { join } from "node:path";
 import { windowSize, type Reading } from "@/lib/audio/pitch";
 import { follower } from "@/lib/score/follow";
 import { judge, type Options } from "@/lib/score/judge";
+import app from "@/settings";
 import { takes } from "./label";
 import { readScore } from "./musicxml";
 import { decode, frameRate, parse, replay } from "./recording";
@@ -235,11 +236,12 @@ function random(seed: number) {
 // The research plan's tolerance: a note within it is in tune.
 const tolerance = 15;
 const shifts = [30, 50, 100];
+// The app's setting first, then other tolerances for comparison.
 const settings: Options[] = [
-  { right: 15, wrong: 25, attack: 0.04, hold: 0.1, strokes: 0.8 },
-  { right: 12, wrong: 18, attack: 0.04, hold: 0.1, strokes: 0.8 },
-  { right: 15, wrong: 20, attack: 0.04, hold: 0.1, strokes: 0.8 },
-  { right: 20, wrong: 30, attack: 0.04, hold: 0.1, strokes: 0.8 },
+  app.feedback,
+  { ...app.feedback, right: 12, wrong: 18 },
+  { ...app.feedback, right: 15, wrong: 20 },
+  { ...app.feedback, right: 20, wrong: 30 },
 ];
 
 void main(process.argv[2]);

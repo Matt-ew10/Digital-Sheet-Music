@@ -4,8 +4,8 @@ import type {
 } from "opensheetmusicdisplay";
 import settings from "@/settings";
 
-// The ways the experiment shows a score (Table 1 of the research plan). Color-coded pitch
-// feedback is not built yet.
+// The ways the experiment shows a score (Table 1 of the research plan). Pitch feedback
+// (condition 5) is not listed: it is a switch in the toolbar, so condition 2 with the switch on.
 export const conditions = [
   { name: "Standard score", cursor: false, contrast: false, spacing: false },
   { name: "Position tracking", cursor: true, contrast: false, spacing: false },

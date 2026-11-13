@@ -1,8 +1,12 @@
-import type { OpenSheetMusicDisplay } from "opensheetmusicdisplay";
+import type {
+  Note as Printed,
+  OpenSheetMusicDisplay,
+} from "opensheetmusicdisplay";
 import type { Note } from "./follow";
 
 // The notes of the first part in the order the cursor visits them, and where each is on the
-// page: the cursor step where it starts, its written position in whole notes, and its measure.
+// page: the cursor step where it starts, its written position in whole notes, its measure, and
+// the printed notes that sound there.
 // Rests, grace notes, and tied continuations start nothing, so their time goes to the note
 // before them. Leaves the cursor at the start.
 export function read(osmd: OpenSheetMusicDisplay) {
@@ -40,6 +44,7 @@ export function read(osmd: OpenSheetMusicDisplay) {
         step,
         written: cursor.Iterator.CurrentSourceTimestamp.RealValue,
         measure: cursor.Iterator.CurrentMeasureIndex,
+        printed: sounding,
       });
     }
 
@@ -56,10 +61,11 @@ export function read(osmd: OpenSheetMusicDisplay) {
       pitches: pitches.toSorted((a, b) => a - b),
       seconds: (starts[index + 1]?.at ?? end) - at,
     })),
-    places: starts.map(({ step, written, measure }): Place => ({
+    places: starts.map(({ step, written, measure, printed }): Place => ({
       step,
       written,
       measure,
+      printed,
     })),
   };
 }
@@ -71,4 +77,5 @@ export interface Place {
   step: number;
   written: number;
   measure: number;
+  printed: Printed[];
 }

@@ -4,6 +4,7 @@ import { useEffect, useEffectEvent, useState } from "react";
 import Score from "@/components/score";
 import {
   ConditionPicker,
+  FeedbackSwitch,
   FollowControls,
   NoteStepper,
   ReferencePicker,
@@ -14,8 +15,10 @@ import { useReference } from "@/hooks/use-reference";
 import { microphone, recording, type listen } from "@/lib/audio/listen";
 import { conditions } from "@/lib/score/conditions";
 import { follower } from "@/lib/score/follow";
+import { judge } from "@/lib/score/judge";
 import scores from "@/lib/score/list";
 import type { Sheet } from "@/lib/score/read";
+import settings from "@/settings";
 
 export default function Home() {
   const [chosen, setChosen] = useState<string | undefined>(scores[0].file);
@@ -24,6 +27,7 @@ export default function Home() {
   const [sheet, setSheet] = useState<Sheet>();
   const [condition, setCondition] = useState(1);
   const [from, setFrom] = useState(0);
+  const [feedback, setFeedback] = useState(false);
   const [error, setError] = useState<string>();
   const [referenceHz, setReferenceHz] = useReference();
   const session = useListening();
@@ -100,8 +104,12 @@ export default function Home() {
 
     follow.wait(from);
 
+    const judgement = feedback
+      ? judge(sheet.notes, referenceHz, settings.feedback)
+      : undefined;
+
     try {
-      await session.start(open, name, follow);
+      await session.start(open, name, follow, judgement);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -157,7 +165,12 @@ export default function Home() {
           onMove={move}
         />
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-4">
+          <FeedbackSwitch
+            checked={feedback}
+            disabled={listening}
+            onChange={setFeedback}
+          />
           <ConditionPicker
             value={condition}
             disabled={listening}
@@ -177,6 +190,7 @@ export default function Home() {
         content={content}
         condition={conditions[condition]}
         note={shown}
+        marks={session.marks}
         onLoad={onLoad}
         onPick={onPick}
         onError={setError}
