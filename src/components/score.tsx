@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, type MouseEvent } from "react";
-import { cn } from "cn";
 import type {
   OpenSheetMusicDisplay,
   VexFlowGraphicalNote,
@@ -159,20 +158,13 @@ export default function Score({
     onPick(picked);
   }
 
-  // On a device in dark mode the score is drawn inverted, with hues turned back so the cursor
-  // keeps its color. High contrast already sets its own colors, so it is left as it is.
-  const dark = !condition.contrast;
-
   // Clicking a note is a shortcut for the pointer. The keyboard does the same with the arrow
   // keys and the toolbar's previous and next buttons, so the score itself takes no keys.
   return (
     // react-doctor-disable-next-line click-events-have-key-events, no-noninteractive-element-interactions
     <main
       ref={containerRef}
-      className={cn(
-        "min-h-0 flex-1 cursor-pointer overflow-auto p-2",
-        dark && "dark:invert dark:hue-rotate-180",
-      )}
+      className="min-h-0 flex-1 cursor-pointer overflow-auto p-2"
       style={{
         background: condition.contrast ? settings.contrast.page : "#ffffff",
       }}
