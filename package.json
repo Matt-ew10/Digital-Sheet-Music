@@ -37,5 +37,12 @@
     "tsx": "4.23.15",
     "typescript": "^5"
   },
+  "reactDoctor": {
+    "ignore": {
+      "files": [
+        "src/components/ui/**"
+      ]
+    }
+  },
   "packageManager": "pnpm@10.34.0"
 }

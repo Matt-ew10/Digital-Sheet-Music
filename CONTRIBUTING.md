@@ -125,6 +125,8 @@ Scores are read with a small reader in `scripts/evaluate/musicxml.ts`, not with 
 pnpm exec shadcn add <component>
 ```
 
+Do not edit these files to satisfy a linter either, since the next `add` would overwrite them. [React Doctor](https://www.react.doctor) skips the folder through `reactDoctor` in `package.json`.
+
 The theme colors in `src/app/globals.css` follow the device's light or dark setting. The CLI writes a `.dark` class variant on `init`; keep the media query instead, since the app has no theme switch.
 
 ## Deployment
