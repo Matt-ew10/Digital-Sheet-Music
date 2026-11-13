@@ -10,6 +10,7 @@
     "evaluate:follow": "tsx scripts/evaluate/follow.ts",
     "evaluate:label": "tsx scripts/evaluate/label.ts",
     "evaluate:student": "tsx scripts/evaluate/student.ts",
+    "evaluate:judge": "tsx scripts/evaluate/judge.ts",
     "urmp:musicxml": "tsx scripts/urmp/convert.ts"
   },
   "dependencies": {
