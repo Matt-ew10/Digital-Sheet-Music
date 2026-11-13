@@ -21,10 +21,18 @@ export function useListening() {
   ) {
     stop();
 
-    stopRef.current = await listen(open, (reading, time) => {
-      setPosition(follow.read(time, reading?.hz));
-    });
+    // Corrections made while the microphone prompt is up or a recording is decoding still count.
     followRef.current = follow;
+
+    try {
+      stopRef.current = await listen(open, (reading, time) => {
+        setPosition(follow.read(time, reading?.hz));
+      });
+    } catch (cause) {
+      followRef.current = undefined;
+      throw cause;
+    }
+
     setSource(name);
   }
 
