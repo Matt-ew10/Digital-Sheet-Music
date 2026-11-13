@@ -89,7 +89,7 @@ Open `Sco_<part>.musicxml` from a piece's folder with the folder button, then fo
 
 ### The student's recordings
 
-The student recorded each viola excerpt played correctly and with mistakes. These are not public and stay outside the repository, in a folder with the WAV files, a `scores/` folder of MusicXML, and `takes.json`, which names each take's score and whether it was played correctly.
+The student recorded the viola excerpts and most beginner violin excerpts played correctly and with mistakes, and the intermediate violin excerpts with mistakes only. These are not public and stay outside the repository, one folder per instrument (`viola/`, `violin/`), each with the WAV files, a `scores/` folder of MusicXML, and `takes.json`, which names each take's score and whether it was played correctly. The scores there are played as the student played them: where the student left out a printed repeat, so does the copy in `scores/`. Run each command below once per folder.
 
 The recordings come without note annotations, so they are made first:
 

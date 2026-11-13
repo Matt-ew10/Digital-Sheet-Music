@@ -86,7 +86,6 @@ The score page draws MusicXML with OpenSheetMusicDisplay (OSMD) and moves OSMD's
 - The follower reads once per animation frame, so a hidden page or a backgrounded tab (which browsers throttle or stop) stops it. The page must stay on screen during a session.
 - **Corrections.** `wait` says which note playing starts from; `seek` puts the player on a note while they play. Both forget the odds elsewhere.
 - **Conditions.** Each condition is a set of switches: whether the cursor shows, high-contrast colors, and simplified spacing (`src/lib/score/conditions.ts`). Switching re-renders the score from OSMD's default engraving rules, so nothing from the previous condition carries over. Simplified spacing widens note spacing, fixes the measures per line, and spreads the lines apart; high contrast only changes colors, so the layout matches the standard score as the research plan requires. Black on white is already the highest possible contrast, so condition 3 defaults to white on black; the research team should confirm what "higher contrast" means.
-- **Dark mode.** On a device set to dark mode, every condition but high contrast is drawn inverted, with hues turned back so the cursor stays green. The standard score then looks much like high contrast, so run experiment sessions on devices in light mode.
 
 ### Measured accuracy
 
@@ -102,22 +101,22 @@ Measured on 2026-11-06 with `pnpm evaluate:follow` over the URMP string tracks w
 
 URMP is played straight through, so restarts can only hurt there: without them the follower reaches 95.1% overall and 97.4% on viola. Allowing them costs about one point.
 
-The student's recordings, measured with `pnpm evaluate:student` over the 8 viola takes played correctly, against labels made by `pnpm evaluate:label` (see [CONTRIBUTING.md](../CONTRIBUTING.md#the-students-recordings)). The labels come from the same detector, so "as recorded" is an upper bound.
+The student's recordings, measured on 2026-11-13 with `pnpm evaluate:student` over the takes played correctly (4 violin, 10 viola), against labels made by `pnpm evaluate:label` (see [CONTRIBUTING.md](../CONTRIBUTING.md#the-students-recordings)). The labels come from the same detector, so "as recorded" is an upper bound.
 
-| Condition                     | Within one note |         Exact |          Lost | 90% lag |
-| ----------------------------- | --------------: | ------------: | ------------: | ------: |
-| As recorded                   |   99.8% (98.5%) | 88.8% (80.3%) |   0.0% (0.2%) |   67 ms |
-| Mistakes (about 1 note in 8)  |   95.6% (90.8%) | 82.8% (70.6%) |   0.6% (1.3%) |   83 ms |
-| Restarts (3 per take)         |   97.6% (56.1%) | 87.9% (45.9%) |  2.0% (40.1%) |   67 ms |
-| Noise 20 dB below             |   99.8% (98.4%) | 88.0% (78.9%) |   0.0% (0.4%) |   83 ms |
-| Noise 10 dB below             |   85.9% (62.6%) | 51.3% (38.9%) |  3.4% (27.1%) |  617 ms |
-| Room                          |   99.6% (97.0%) | 85.7% (74.9%) |   0.1% (0.1%) |  100 ms |
-| Another player 10 dB below    |   97.0% (93.7%) | 81.4% (68.6%) |   0.7% (1.1%) |  100 ms |
-| Tuned to 442                  |   99.8% (97.5%) | 89.7% (80.0%) |   0.0% (0.6%) |   67 ms |
+| Condition                     | Violin within one note | Violin lost | Viola within one note | Viola lost | 90% lag (violin / viola) |
+| ----------------------------- | ---------------------: | ----------: | --------------------: | ---------: | -----------------------: |
+| As recorded                   |                  99.8% |        0.0% |                 99.7% |       0.0% |              67 / 67 ms |
+| Mistakes (about 1 note in 8)  |                  95.7% |        1.4% |                 95.9% |       0.8% |              83 / 83 ms |
+| Restarts (3 per take)         |                  95.6% |        4.3% |                 97.2% |       2.4% |              67 / 67 ms |
+| Noise 20 dB below             |                  99.9% |        0.0% |                 99.7% |       0.0% |              67 / 83 ms |
+| Noise 10 dB below             |                  94.6% |        0.1% |                 88.1% |       2.7% |            383 / 600 ms |
+| Room                          |                  99.8% |        0.0% |                 99.7% |       0.1% |             83 / 100 ms |
+| Another player 10 dB below    |                  90.5% |        8.2% |                 95.3% |       1.7% |              83 / 83 ms |
+| Tuned to 442                  |                  99.8% |        0.0% |                 99.8% |       0.0% |              67 / 67 ms |
 
-After a restart the cursor is back within one note of the player within a second 92% of the time (22 of 24); the previous follower never found them again.
+After a restart the cursor is back within one note of the player within a second 8 of 12 times on violin and 26 of 30 on viola. On the first 8 viola takes, the previous follower reached 98.5% as recorded, 90.8% with mistakes, and 56.1% with restarts, and never found the player again after one.
 
-Targets set for the experiment, and where they stand: within one note at least 95% (student takes yes; URMP violin 94.1% no), lost at most 1% (student takes yes except restarts, 2.0%; URMP violin 3.8% no), 90% lag at most 150 ms (yes, except URMP cello), back within a second after a restart (22 of 24).
+Targets set for the experiment, and where they stand: within one note at least 95% (student takes yes, except another player on violin, 90.5%; URMP violin 94.1% no), lost at most 1% (student takes as recorded yes; restarts 2.4 to 4.3% and another player on violin 8.2% no; URMP violin 3.8% no), 90% lag at most 150 ms (yes, except URMP cello), back within a second after a restart (violin 67%, viola 87%).
 
 On wrong notes alone, the cursor is not yet good enough for condition 5. With isolated wrong notes in the score (about one in twelve, judged from 150 ms into the note), the cursor sat on the wrong note 62% of the time for a semitone up, and 28 to 30% for a whole tone down or a fourth up. It mostly ran ahead (29 to 55%) to a later note with the pitch it heard, since a wrong note that matches the next written pitch looks the same as playing ahead. The judge therefore places sounds by strokes as well (see Pitch feedback below).
 
@@ -154,18 +153,22 @@ The person running a session can correct the cursor by hand, so the follower doe
 - **Which note.** A sound belongs to the follower's note, except that a new stroke on a note that already has its verdict, once 80% of its written length has passed, belongs to the next note. The follower is then behind, or held back because the wrong pitch matches the note before. The follower's position alone placed only half of the wrong notes on the right note (above).
 - **Clearing.** A wrong verdict holds for that pass over the note; a right verdict on a later pass, as when the passage is practiced again, clears the mark.
 
-Measured on 2026-11-13 with `pnpm evaluate:judge` over the 8 correct viola takes. The takes are not perfectly in tune: measured over each whole note, 12.6% of notes are more than 15 cents off (18.3% of notes under 0.25 seconds, 2.6% of notes of half a second or more; 0 to 2% in the beginner pieces, 6 to 17% in the intermediate ones). One note in ten was moved by 30, 50, or 100 cents to make mistakes with known places.
+Measured on 2026-11-13 with `pnpm evaluate:judge` over the correct takes (4 violin, 10 viola). The takes are not perfectly in tune: measured over each whole note, 9.1% of violin notes and 13.9% of viola notes are more than 15 cents off (17.2 and 23.1% of notes under 0.25 seconds; 6.8 and 6.2% of notes of half a second or more). One note in ten was moved by 30, 50, or 100 cents to make mistakes with known places.
 
-| Tolerance (right / wrong) | Judged | Marked as recorded | Marked though within 15 cents | 30 cents caught | 50 cents caught | 100 cents caught |
-| ------------------------- | ------ | ------------------ | ----------------------------- | --------------- | --------------- | ---------------- |
-| 15 / 25 (the setting)     | 80.0%  | 3.9%               | 0.3%                          | 86%             | 82%             | 73%              |
-| 12 / 18                   | 77.1%  | 8.1%               | 0.8%                          | 87%             | 83%             | 73%              |
-| 15 / 20                   | 82.3%  | 6.2%               | 0.4%                          | 82%             | 83%             | 73%              |
-| 20 / 30                   | 84.3%  | 2.3%               | 0.3%                          | 85%             | 83%             | 73%              |
+| Tolerance (right / wrong) | Instrument | Judged | Marked as recorded | Marked though within 15 cents | 30 cents caught | 50 cents caught | 100 cents caught |
+| ------------------------- | ---------- | -----: | -----------------: | ----------------------------: | --------------: | --------------: | ---------------: |
+| 15 / 25 (the setting)     | Violin     |  79.6% |               0.4% |                          0.0% |             84% |             88% |              81% |
+| 15 / 25 (the setting)     | Viola      |  78.6% |               3.7% |                          0.4% |             87% |             84% |              77% |
+| 12 / 18                   | Violin     |  75.2% |               2.2% |                          0.4% |             84% |             88% |              81% |
+| 12 / 18                   | Viola      |  76.3% |               8.5% |                          1.1% |             87% |             85% |              77% |
+| 15 / 20                   | Violin     |  81.0% |               1.8% |                          0.4% |             83% |             88% |              81% |
+| 15 / 20                   | Viola      |  81.3% |               6.3% |                          0.6% |             84% |             85% |              77% |
+| 20 / 30                   | Violin     |  84.7% |               0.4% |                          0.0% |             86% |             88% |              81% |
+| 20 / 30                   | Viola      |  84.0% |               2.2% |                          0.4% |             87% |             84% |              77% |
 
-In practice, with a note played 50 cents off and the passage played again in tune from the measure before, 12 of 14 marks cleared.
+In practice, with a note played 50 cents off and the passage played again in tune from the measure before, 5 of 6 marks cleared on violin and 14 of 17 on viola.
 
-How the judge got there, at 15 / 25 unless noted:
+How the judge got there, on the first 8 viola takes, at 15 / 25 unless noted:
 
 | Change                                                  | Result                                                         |
 | ------------------------------------------------------- | -------------------------------------------------------------- |
@@ -179,8 +182,8 @@ Tried and not kept: holding only 0.06 s (false marks 0.3 → 1.9%); a new stroke
 Still open:
 
 - The reference is the same detector's readings over the whole note, with labels not yet checked by ear. Whether a marked note sounds out of tune is for a listener to confirm.
-- 27% of wrong notes are missed, mostly when the wrong pitch matches a neighbouring note.
-- On the incorrect takes the judge marks 10 to 65 notes each. Some takes are tuned 20 to 30 cents flat throughout, and some skip repeats the score has, so those lists are not yet a check of the judge.
+- 19 to 23% of wrong notes are missed, mostly when the wrong pitch matches a neighbouring note.
+- On the incorrect takes the judge marks 10 to 65 notes each. Some takes are tuned 20 to 30 cents flat throughout, and some skip repeats the score has, so those lists are not yet a check of the judge. The student's list of mistakes in each take would make them one.
 
 ## Designs not adopted
 

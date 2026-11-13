@@ -39,6 +39,27 @@ async function main(folder?: string) {
     }),
   );
   const correct = all.filter((take) => take.played);
+
+  // How far the correct takes themselves are from their written pitches, by note length.
+  const references = correct.flatMap((take) => {
+    const lead = windowSize / 2 / take.sampleRate;
+
+    return take.played!.map(([onset, , duration], index) => ({
+      duration,
+      cents: deviation(take.readings, take.score[index].pitches, onset + lead + 0.05, onset + lead + duration - 0.03),
+    }));
+  });
+
+  for (const [label, keep] of [
+    ["all notes", () => true],
+    ["under 0.25 s", (seconds: number) => seconds < 0.25],
+    ["0.5 s or more", (seconds: number) => seconds >= 0.5],
+  ] as const) {
+    const group = references.filter((note) => keep(note.duration));
+    const off = group.filter((note) => Math.abs(note.cents ?? 0) > tolerance).length;
+
+    console.log(`${label}: ${percent(off, group.length)}% of ${group.length} notes beyond ${tolerance} cents`);
+  }
   const rows = [];
 
   for (const options of settings) {
