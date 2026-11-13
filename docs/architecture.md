@@ -86,6 +86,7 @@ The score page draws MusicXML with OpenSheetMusicDisplay (OSMD) and moves OSMD's
 - The follower reads once per animation frame, so a hidden page or a backgrounded tab (which browsers throttle or stop) stops it. The page must stay on screen during a session.
 - **Corrections.** `wait` says which note playing starts from; `seek` puts the player on a note while they play. Both forget the odds elsewhere.
 - **Conditions.** Each condition is a set of switches: whether the cursor shows, high-contrast colors, and simplified spacing (`src/lib/score/conditions.ts`). Switching re-renders the score from OSMD's default engraving rules, so nothing from the previous condition carries over. Simplified spacing widens note spacing, fixes the measures per line, and spreads the lines apart; high contrast only changes colors, so the layout matches the standard score as the research plan requires. Black on white is already the highest possible contrast, so condition 3 defaults to white on black; the research team should confirm what "higher contrast" means.
+- **Dark mode.** On a device set to dark mode, every condition but high contrast is drawn inverted, with hues turned back so the cursor stays green. The standard score then looks much like high contrast, so run experiment sessions on devices in light mode.
 
 ### Measured accuracy
 
