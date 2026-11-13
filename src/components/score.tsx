@@ -119,7 +119,10 @@ export default function Score({
     onPick(picked);
   }
 
+  // Clicking a note is a shortcut for the pointer. The keyboard does the same with the arrow
+  // keys and the toolbar's previous and next buttons, so the score itself takes no keys.
   return (
+    // react-doctor-disable-next-line click-events-have-key-events, no-noninteractive-element-interactions
     <main
       ref={containerRef}
       className="min-h-0 flex-1 cursor-pointer overflow-auto p-2"
