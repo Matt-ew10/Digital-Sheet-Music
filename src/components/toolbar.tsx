@@ -66,7 +66,7 @@ export function ScorePicker({
         <SelectTrigger aria-label="Score" className="max-w-72">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="w-auto min-w-(--anchor-width) max-w-(--available-width)">
           {opened && !chosen && <SelectItem value="">{opened}</SelectItem>}
           {groups.map((group) => (
             <SelectGroup key={group}>
