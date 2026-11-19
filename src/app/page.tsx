@@ -8,6 +8,7 @@ import {
   NoteStepper,
   ReferencePicker,
   ScorePicker,
+  SpacingControl,
 } from "@/components/toolbar";
 import { useListening } from "@/hooks/use-listening";
 import { useReference } from "@/hooks/use-reference";
@@ -25,6 +26,7 @@ export default function Home() {
   const [content, setContent] = useState<string | Blob>();
   const [sheet, setSheet] = useState<Sheet>();
   const [condition, setCondition] = useState(1);
+  const [spacing, setSpacing] = useState(settings.spacing.notes);
   const [from, setFrom] = useState(0);
   const [error, setError] = useState<string>();
   const [referenceHz, setReferenceHz] = useReference();
@@ -73,7 +75,7 @@ export default function Home() {
   }, []);
 
   function show(score: string | Blob) {
-    session.stop();
+    session.reset();
     setError(undefined);
     setContent(score);
   }
@@ -179,15 +181,24 @@ export default function Home() {
         {error && <p className="w-full text-destructive">{error}</p>}
       </header>
 
-      <Score
-        content={content}
-        condition={conditions[condition]}
-        note={shown}
-        marks={session.marks}
-        onLoad={onLoad}
-        onPick={onPick}
-        onError={setError}
-      />
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <Score
+          content={content}
+          condition={conditions[condition]}
+          spacing={spacing}
+          note={shown}
+          marks={conditions[condition].feedback ? session.marks : unmarked}
+          onLoad={onLoad}
+          onPick={onPick}
+          onError={setError}
+        />
+
+        {conditions[condition].spacing && (
+          <SpacingControl value={spacing} onChange={setSpacing} />
+        )}
+      </div>
     </div>
   );
 }
+
+const unmarked: ReadonlySet<number> = new Set();

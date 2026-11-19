@@ -7,7 +7,8 @@ import type { judge } from "@/lib/score/judge";
 
 // Feeds one audio source at a time to a score follower, and to a pitch judge when one is given:
 // the source's name while it plays, the note the follower puts the player on (-1 before the
-// first), and the notes the judge marks wrong.
+// first), and the notes the judge marks wrong. The marks stay after the source stops, so the
+// player can look over them, until the next start or `reset`.
 export function useListening() {
   const stopRef = useRef<() => void>(undefined);
   const followRef = useRef<ReturnType<typeof follower>>(undefined);
@@ -24,6 +25,7 @@ export function useListening() {
     judgement?: ReturnType<typeof judge>,
   ) {
     stop();
+    setMarks(new Set());
 
     // Corrections made while the microphone prompt is up or a recording is decoding still count.
     followRef.current = follow;
@@ -49,6 +51,11 @@ export function useListening() {
     followRef.current = undefined;
     setSource(undefined);
     setPosition(-1);
+  }
+
+  // Stops and forgets the marks, as when another score is opened.
+  function reset() {
+    stop();
     setMarks(new Set());
   }
 
@@ -60,5 +67,5 @@ export function useListening() {
     setPosition(note);
   }
 
-  return { source, position, marks, start, stop, seek };
+  return { source, position, marks, start, stop, reset, seek };
 }

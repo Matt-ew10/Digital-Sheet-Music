@@ -10,16 +10,18 @@ export const conditions = [
   { name: "Position tracking", cursor: true, contrast: false, spacing: false, feedback: false },
   { name: "High contrast", cursor: false, contrast: true, spacing: false, feedback: false },
   { name: "Simplified layout", cursor: false, contrast: false, spacing: true, feedback: false },
-  { name: "Pitch feedback", cursor: true, contrast: false, spacing: false, feedback: true },
+  { name: "Pitch feedback", cursor: false, contrast: false, spacing: false, feedback: true },
 ];
 
 // Sets OSMD up to draw `condition`, starting from OSMD's defaults so that nothing carries over
 // from the condition drawn before. Takes effect at the next render. OSMD's classes come in as
-// `Rules` because OSMD can only be loaded in the browser.
+// `Rules` because OSMD can only be loaded in the browser. `notes` is how many times wider notes
+// are spaced in the simplified layout, which the person running the session can adjust.
 export function apply(
   osmd: OpenSheetMusicDisplay,
   condition: Condition,
   Rules: typeof EngravingRules,
+  notes: number,
 ) {
   const defaults = new Rules();
   const rules = osmd.EngravingRules;
@@ -30,14 +32,11 @@ export function apply(
     pageBackgroundColor: condition.contrast ? contrast.page : "#ffffff",
   });
 
-  const factor = condition.spacing ? spacing.notes : 1;
+  const factor = condition.spacing ? notes : 1;
 
   rules.VoiceSpacingMultiplierVexflow =
     defaults.VoiceSpacingMultiplierVexflow * factor;
   rules.VoiceSpacingAddendVexflow = defaults.VoiceSpacingAddendVexflow * factor;
-  rules.RenderXMeasuresPerLineAkaSystem = condition.spacing
-    ? spacing.measuresPerLine
-    : defaults.RenderXMeasuresPerLineAkaSystem;
   rules.MinimumDistanceBetweenSystems =
     defaults.MinimumDistanceBetweenSystems *
     (condition.spacing ? spacing.lines : 1);

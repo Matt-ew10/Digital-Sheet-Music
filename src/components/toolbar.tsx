@@ -12,6 +12,8 @@ import {
   FileAudio,
   FolderOpen,
   Mic,
+  Minus,
+  Plus,
   Square,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import {
   Tooltip,
   TooltipContent,
@@ -208,6 +211,56 @@ export function ConditionPicker({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+// How much wider notes are spaced in the simplified layout, for the person running the session
+// to fit the player. Floats over the score, so showing it does not move the toolbar.
+export function SpacingControl({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const { widest } = settings.spacing;
+
+  function nudge(by: number) {
+    onChange(Math.min(Math.max(Math.round((value + by) * 10) / 10, 1), widest));
+  }
+
+  return (
+    <div className="absolute right-4 bottom-4 flex items-center gap-3 rounded-xl border bg-background/95 px-3 py-2 text-sm shadow-md">
+      <span className="whitespace-nowrap text-muted-foreground">Note spacing</span>
+      <Button
+        variant="outline"
+        size="icon-lg"
+        aria-label="Narrower"
+        disabled={value <= 1}
+        onClick={() => nudge(-0.5)}
+      >
+        <Minus />
+      </Button>
+      <Slider
+        className="shrink-0 data-horizontal:w-48 [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-track]]:h-2"
+        aria-label="Note spacing"
+        min={1}
+        max={widest}
+        step={0.1}
+        value={[value]}
+        onValueChange={(next) => onChange(Array.isArray(next) ? next[0] : next)}
+      />
+      <Button
+        variant="outline"
+        size="icon-lg"
+        aria-label="Wider"
+        disabled={value >= widest}
+        onClick={() => nudge(0.5)}
+      >
+        <Plus />
+      </Button>
+      <span className="w-9 text-right tabular-nums">{value.toFixed(1)}×</span>
+    </div>
   );
 }
 

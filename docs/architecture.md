@@ -24,7 +24,7 @@ microphone or file → AnalyserNode → 2048 samples every frame → pitchy (McL
 - A reading counts as a note only if it is louder than `minVolumeDb` and clearer than `minClarity` (both in `src/settings.ts`). Otherwise there is no reading, which the follower treats as silence.
   - Clarity decides most misses. Low strings often read below 0.9 because their overtones are strong; 0.8 recovers most of them at the cost of more readings between notes. Going lower gains little (see the table below).
   - Loudness cannot tell notes from gaps in URMP: frames annotated as silent are about as loud as played ones, because they are mostly releases and ringing. The volume gate only catches true silence.
-- Notes are named from the A4 the player tuned to, picked on the score page from `referenceChoices` and remembered on the device (`src/hooks/use-reference.ts`). Participants tune to 442 Hz before the experiment, but the student's practice recordings were made at 440 Hz. With the wrong choice every note reads 8 cents off, more than half of condition 5's 15-cent tolerance. The follower rounds to semitones, so following is not affected. The URMP evaluation always uses 440 Hz, which URMP is tuned to.
+- Notes are named from the A4 the player tuned to, picked on the score page from `referenceChoices` and remembered on the device (`src/hooks/use-reference.ts`). Participants tune to 442 Hz before the experiment, but the student's practice recordings were made at 440 Hz. With the wrong choice every note reads 8 cents off, a third of condition 5's 25-cent tolerance. The follower rounds to semitones, so following is not affected. The URMP evaluation always uses 440 Hz, which URMP is tuned to.
 - The `AudioContext` is created synchronously in the click handler. Safari only lets audio start inside the user's gesture.
 
 ### Measured accuracy
@@ -85,7 +85,8 @@ The score page draws MusicXML with OpenSheetMusicDisplay (OSMD) and moves OSMD's
 - The follower is given the audio clock's time with each reading, not a reading count, since screens refresh at different rates. It moves in fixed steps of a sixtieth of a second, so a 120 Hz screen gives it the same steps.
 - The follower reads once per animation frame, so a hidden page or a backgrounded tab (which browsers throttle or stop) stops it. The page must stay on screen during a session.
 - **Corrections.** `wait` says which note playing starts from; `seek` puts the player on a note while they play. Both forget the odds elsewhere.
-- **Conditions.** Each condition is a set of switches: whether the cursor shows, high-contrast colors, and simplified spacing (`src/lib/score/conditions.ts`). Switching re-renders the score from OSMD's default engraving rules, so nothing from the previous condition carries over. Simplified spacing widens note spacing, fixes the measures per line, and spreads the lines apart; high contrast only changes colors, so the layout matches the standard score as the research plan requires. Black on white is already the highest possible contrast, so condition 3 defaults to white on black; the research team should confirm what "higher contrast" means.
+- **Conditions.** Each condition is a set of switches: whether the cursor shows, high-contrast colors, simplified spacing, and pitch feedback (`src/lib/score/conditions.ts`). Switching re-renders the score from OSMD's default engraving rules, so nothing from the previous condition carries over. Only condition 2 shows the cursor. High contrast only changes colors, so the layout matches the standard score as the research plan requires; black on white is already the highest possible contrast, so condition 3 is white on black.
+- **Simplified spacing.** Note spacing is widened by a factor the person running the session sets with a control floating over the score (1 to 5 times, 3 at first), and lines are spread twice as far apart. OSMD decides how many measures fit on a line. Fixing the measures per line, as the first version did, stretched each line to the page width, so changing the spacing did not change what the player saw. On the Gossec Gavotte the factor gives 6 measures a line at 1, 3 at 1.8, 2 at 3, and 1 at 5.
 
 ### Measured accuracy
 
@@ -149,22 +150,24 @@ The person running a session can correct the cursor by hand, so the follower doe
 `src/lib/score/judge.ts` marks notes played out of tune. It runs beside the follower and takes the follower's position with each reading.
 
 - **Held sounds.** Readings are grouped into sounds by pitch and silence: a gap or a jump of more than a quarter tone starts a new one. A sound is judged once 0.04 seconds of bow attack have passed and it has been held 0.1 seconds more, by its median pitch with octaves folded away, so vibrato and the detector's octave errors are not mistakes. Shorter sounds are not judged.
-- **Tolerance.** Within 15 cents a note is right; beyond 25 it is wrong; between the two it is not judged, since a false mark on a correct note is worse than a missed one.
+- **Tolerance.** Within 25 cents a note is right; beyond it, wrong. The research team set 25 cents after seeing how many notes the student's own correct takes put beyond 15 (below). The judge can also leave a band between `right` and `wrong` unjudged, which an earlier setting (15 / 25) did.
 - **Which note.** A sound belongs to the follower's note, except that a new stroke on a note that already has its verdict, once 80% of its written length has passed, belongs to the next note. The follower is then behind, or held back because the wrong pitch matches the note before. The follower's position alone placed only half of the wrong notes on the right note (above).
-- **Clearing.** A wrong verdict holds for that pass over the note; a right verdict on a later pass, as when the passage is practiced again, clears the mark.
+- **Clearing.** A wrong verdict holds for that pass over the note; a right verdict on a later pass, as when the passage is practiced again, clears the mark. The marks stay on the score after following stops, so the player can look them over, and clear when following starts again.
 
-Measured on 2026-11-13 with `pnpm evaluate:judge` over the correct takes (4 violin, 10 viola). The takes are not perfectly in tune: measured over each whole note, 9.1% of violin notes and 13.9% of viola notes are more than 15 cents off (17.2 and 23.1% of notes under 0.25 seconds; 6.8 and 6.2% of notes of half a second or more). One note in ten was moved by 30, 50, or 100 cents to make mistakes with known places.
+Measured on 2026-11-19 with `pnpm evaluate:judge` over the correct takes (4 violin, 10 viola). The takes are not perfectly in tune: measured over each whole note, 9.1% of violin notes and 13.9% of viola notes are more than 15 cents off, and 1.1% and 2.9% more than 25 (6.9 and 7.7% of notes under 0.25 seconds; 1.1 and 1.2% of notes of half a second or more). One note in ten was moved by 30, 50, or 100 cents to make mistakes with known places.
 
-| Tolerance (right / wrong) | Instrument | Judged | Marked as recorded | Marked though within 15 cents | 30 cents caught | 50 cents caught | 100 cents caught |
+| Tolerance (right / wrong) | Instrument | Judged | Marked as recorded | Marked though within 25 cents | 30 cents caught | 50 cents caught | 100 cents caught |
 | ------------------------- | ---------- | -----: | -----------------: | ----------------------------: | --------------: | --------------: | ---------------: |
-| 15 / 25 (the setting)     | Violin     |  79.6% |               0.4% |                          0.0% |             84% |             88% |              81% |
-| 15 / 25 (the setting)     | Viola      |  78.6% |               3.7% |                          0.4% |             87% |             84% |              77% |
-| 12 / 18                   | Violin     |  75.2% |               2.2% |                          0.4% |             84% |             88% |              81% |
-| 12 / 18                   | Viola      |  76.3% |               8.5% |                          1.1% |             87% |             85% |              77% |
-| 15 / 20                   | Violin     |  81.0% |               1.8% |                          0.4% |             83% |             88% |              81% |
-| 15 / 20                   | Viola      |  81.3% |               6.3% |                          0.6% |             84% |             85% |              77% |
-| 20 / 30                   | Violin     |  84.7% |               0.4% |                          0.0% |             86% |             88% |              81% |
-| 20 / 30                   | Viola      |  84.0% |               2.2% |                          0.4% |             87% |             84% |              77% |
+| 25 / 25 (the setting)     | Violin     |  86.1% |               0.4% |                          0.0% |             84% |             88% |              81% |
+| 25 / 25 (the setting)     | Viola      |  88.2% |               3.7% |                          1.4% |             87% |             84% |              77% |
+| 15 / 25                   | Violin     |  79.6% |               0.4% |                          0.0% |             84% |             88% |              81% |
+| 15 / 25                   | Viola      |  78.6% |               3.7% |                          1.4% |             87% |             84% |              77% |
+| 15 / 15                   | Violin     |  86.1% |               6.9% |                          6.6% |             84% |             88% |              81% |
+| 15 / 15                   | Viola      |  88.2% |              13.2% |                         10.8% |             89% |             85% |              77% |
+| 12 / 18                   | Violin     |  75.2% |               2.2% |                          1.8% |             84% |             88% |              81% |
+| 12 / 18                   | Viola      |  76.3% |               8.5% |                          6.0% |             87% |             85% |              77% |
+
+A note is marked by its first 0.14 seconds, the whole-note reference by all of it, so a note can be marked though its whole is within the tolerance (1.4% of viola notes).
 
 In practice, with a note played 50 cents off and the passage played again in tune from the measure before, 5 of 6 marks cleared on violin and 14 of 17 on viola.
 

@@ -121,7 +121,7 @@ Condition 5's judge (`src/lib/score/judge.ts`) is measured on the same takes:
 pnpm evaluate:judge ~/datasets/student/viola
 ```
 
-The correct takes are not perfectly in tune, so it first measures each note's own distance from its written pitch over the whole note, then reports for several settings how many notes the live judge marks and how many of those were within 15 cents (false marks), how many notes moved by 30, 50, or 100 cents it catches, the share of notes judged at all, and whether a mark clears when the passage is replayed in tune. It ends with the notes it marks in the incorrect takes, for the student to compare with what they played.
+The correct takes are not perfectly in tune, so it first measures each note's own distance from its written pitch over the whole note, then reports for several settings how many notes the live judge marks and how many of those were within the tolerance (false marks), how many notes moved by 30, 50, or 100 cents it catches, the share of notes judged at all, and whether a mark clears when the passage is replayed in tune. It ends with the notes it marks in the incorrect takes, for the student to compare with what they played.
 
 Scores are read with a small reader in `scripts/evaluate/musicxml.ts`, not with OSMD as on the score page. It handles what the excerpts use (one tempo, chords, ties, grace notes, repeats without endings); check that a new score's note count matches the score page before relying on it.
 

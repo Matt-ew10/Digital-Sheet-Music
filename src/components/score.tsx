@@ -9,11 +9,12 @@ import { apply, type Condition } from "@/lib/score/conditions";
 import { read, type Sheet } from "@/lib/score/read";
 import settings from "@/settings";
 
-// Draws a MusicXML score for one condition, keeps its cursor on `note`, and colors the notes in
-// `marks`. Reports the score's notes once it is drawn, and which note a click lands on.
+// Draws a MusicXML score for one condition, with notes `spacing` times wider in the simplified
+// layout, keeps its cursor on `note`, and colors the notes in `marks`. Reports the score's notes once it is drawn, and which note a click lands on.
 export default function Score({
   content,
   condition,
+  spacing,
   note,
   marks,
   onLoad,
@@ -36,7 +37,7 @@ export default function Score({
     if (content) void onContent(content);
   }, [content]);
 
-  useEffect(() => onCondition(), [condition]);
+  useEffect(() => onCondition(), [condition, spacing]);
   useEffect(() => onNote(note), [note]);
   // OSMD redraws the page itself when the window is resized, which drops the colors, so they
   // are put back as the cursor moves too.
@@ -67,7 +68,7 @@ export default function Score({
 
     if (!osmd || !library || !osmd.Sheet) return;
 
-    apply(osmd, condition, library.EngravingRules);
+    apply(osmd, condition, library.EngravingRules, spacing);
     osmd.render();
     sheetRef.current ??= read(osmd);
     osmd.cursor.reset();
@@ -177,6 +178,7 @@ export default function Score({
 interface Props {
   content?: string | Blob;
   condition: Condition;
+  spacing: number;
   note: number;
   marks: ReadonlySet<number>;
   onLoad: (sheet: Sheet) => void;

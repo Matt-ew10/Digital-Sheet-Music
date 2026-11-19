@@ -4,13 +4,13 @@ A web app that shows sheet music to string players in five conditions, built for
 
 ## Conditions
 
-| #   | Condition       | What the player sees                                                        |
-| --- | --------------- | --------------------------------------------------------------------------- |
-| 1   | Standard        | The score as printed                                                        |
-| 2   | Position cursor | A highlight that follows the note being played, driven by the microphone    |
-| 3   | High contrast   | The same layout with stronger colors                                        |
-| 4   | Simplified      | Wider spacing between measures and notes                                    |
-| 5   | Pitch feedback  | Condition 2, with each played note colored by whether its pitch was in tune |
+| #   | Condition       | What the player sees                                                                      |
+| --- | --------------- | ----------------------------------------------------------------------------------------- |
+| 1   | Standard        | The score as printed                                                                      |
+| 2   | Position cursor | A highlight that follows the note being played, driven by the microphone                  |
+| 3   | High contrast   | The same layout with stronger colors                                                      |
+| 4   | Simplified      | Wider spacing between notes, adjustable for each player, and further between lines        |
+| 5   | Pitch feedback  | Notes played more than 25 cents out of tune turn red, without the position cursor         |
 
 Scores are MusicXML files. The app does not grade performances; the conductor scores them with a rubric.
 
@@ -54,6 +54,8 @@ The page opens with a short sample. The picker at the top left lists the experim
 The person running a session:
 
 - picks one of the experiment's five conditions. Colors for high contrast, spacing for the simplified layout, and the pitch tolerance for pitch feedback are in `src/settings.ts`.
+- in the simplified layout, widens or narrows the note spacing for the player with the control at the bottom right of the score. Wider spacing puts fewer measures on a line.
+- in pitch feedback, leaves the red marks on the score after stopping, so the player can look them over; following again clears them.
 - picks the A4 the player tuned to (440 or 442 Hz; participants use 442). The choice is remembered on the device.
 - clicks a note before playing to start from its measure, for practicing part of a passage.
 - clicks a note while following, or uses the arrows beside the note number or the arrow keys, to put the cursor back on the player when it goes astray.
@@ -62,12 +64,9 @@ The person running a session:
 
 `public/scores/` holds the passages the student chose for the experiment, for violin and viola: 15 violin and 10 viola excerpts, from beginner to advanced. They are public-domain works, transcribed as pitches and rhythms only; fingerings, bowings, dynamics, and other markings from the printed editions are left out. The three pieces Shinichi Suzuki composed were replaced with Bach's Minuets No. 1 and No. 3 for violin and Gossec's Gavotte and Brahms's Waltz for viola.
 
-Still open with the research team:
+Repeats are written out once: players may play a passage as many times as they like, so the excerpts leave out the printed repeat signs. The Seitz concertos keep the orchestra's introduction and the Veracini sonata its six opening measures of rest, as printed.
 
-- The Seitz concertos start with the orchestra's introduction, and the Veracini sonata with six measures of rest.
-- The viola Bach Bourrée and Bach Gavotte and the violin Minuet No. 1 end inside a repeated section, so the score page plays that section twice where the player plays it once (210 and 142 notes instead of 154 and 120 for the viola pieces).
-- The student's recordings of Minuet No. 1, Minuet No. 3, and the Gossec Gavotte leave out the printed repeats, which the score page plays.
-- Some measures still need a proofread against the printed parts.
+Some measures still need a proofread against the printed parts.
 
 Cello excerpts are not in yet.
 
