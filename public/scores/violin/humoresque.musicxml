@@ -97,7 +97,6 @@
     </measure>
     <measure number="8">
       <note><pitch><step>D</step><octave>4</octave></pitch><duration>96</duration><type>half</type></note>
-      <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>
     </measure>
     <measure number="9">
       <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>24</duration><type>eighth</type></note>

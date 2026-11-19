@@ -77,7 +77,6 @@
       <note><pitch><step>G</step><octave>4</octave></pitch><duration>48</duration><type>quarter</type></note>
       <note><pitch><step>G</step><octave>3</octave></pitch><duration>48</duration><type>quarter</type></note>
       <note><rest/><duration>48</duration><type>quarter</type></note>
-      <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>
     </measure>
     <measure number="9">
       <note><pitch><step>D</step><octave>4</octave></pitch><duration>24</duration><type>eighth</type></note>

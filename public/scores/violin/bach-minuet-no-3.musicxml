@@ -108,7 +108,6 @@
     </measure>
     <measure number="16">
       <note><pitch><step>G</step><octave>4</octave></pitch><duration>144</duration><type>half</type><dot/></note>
-      <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>
     </measure>
   </part>
 </score-partwise>
