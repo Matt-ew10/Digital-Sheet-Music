@@ -202,8 +202,8 @@ export function TempoControl({
 
   return (
     <div className="flex items-center gap-3">
-      <span className="min-w-16 whitespace-nowrap text-right tabular-nums">
-        {beats[beat] ?? "♩"} = {tempo}
+      <span className="flex min-w-16 items-center justify-end gap-1 whitespace-nowrap tabular-nums">
+        <Beat quarters={beat} />= {tempo}
       </span>
       <Stepper
         value={tempo}
@@ -370,5 +370,25 @@ function caption(score: (typeof scores)[number]) {
   return `${score.title} (${score.composer})`;
 }
 
-// Note symbols for a beat of so many quarter notes.
-const beats: Record<number, string> = { 1: "♩", 1.5: "♩.", 2: "𝅗𝅥" };
+// The note a beat lasts, drawn rather than typed: most fonts lack the half note's character, and
+// a dotted note is two characters that fonts space apart.
+function Beat({ quarters }: { quarters: number }) {
+  const label = { 1: "Quarter note", 1.5: "Dotted quarter note", 2: "Half note" }[quarters];
+
+  return (
+    <svg viewBox="0 0 14 24" className="h-5 w-3" role="img" aria-label={label}>
+      <ellipse
+        cx="5"
+        cy="19"
+        rx="4"
+        ry="3"
+        transform="rotate(-20 5 19)"
+        fill={quarters === 2 ? "none" : "currentColor"}
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <line x1="8.5" y1="18" x2="8.5" y2="2" stroke="currentColor" strokeWidth="1.5" />
+      {quarters === 1.5 && <circle cx="12.5" cy="19" r="1.3" fill="currentColor" />}
+    </svg>
+  );
+}
