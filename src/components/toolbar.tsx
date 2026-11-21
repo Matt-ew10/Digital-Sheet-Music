@@ -252,7 +252,7 @@ export function ConditionPicker({
       disabled={disabled}
       onValueChange={(condition) => condition !== null && onChange(condition)}
     >
-      <SelectTrigger aria-label="Condition">
+      <SelectTrigger aria-label="Condition" className="w-52">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

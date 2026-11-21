@@ -158,20 +158,22 @@ export default function Home() {
   return (
     <div className="flex h-dvh flex-col">
       <header className={bar}>
-        <ScorePicker
-          chosen={chosen}
-          opened={opened}
-          disabled={listening}
-          onChoose={setChosen}
-          onOpen={onOpen}
-        />
-
-        <div className="ml-auto flex items-center gap-2">
-          <ConditionPicker
-            value={condition}
+        <div className="flex items-center gap-2">
+          <ScorePicker
+            chosen={chosen}
+            opened={opened}
             disabled={listening}
-            onChange={setCondition}
+            onChoose={setChosen}
+            onOpen={onOpen}
           />
+          <ReferencePicker
+            hz={referenceHz}
+            disabled={listening}
+            onChange={setReferenceHz}
+          />
+        </div>
+
+        <div className="ml-auto flex items-center gap-4">
           <ConditionOptions
             condition={conditions[condition]}
             spacing={spacing}
@@ -179,10 +181,10 @@ export default function Home() {
             onSpacing={setSpacing}
             onTint={setTint}
           />
-          <ReferencePicker
-            hz={referenceHz}
+          <ConditionPicker
+            value={condition}
             disabled={listening}
-            onChange={setReferenceHz}
+            onChange={setCondition}
           />
         </div>
 
