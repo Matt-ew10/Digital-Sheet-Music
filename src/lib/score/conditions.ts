@@ -8,7 +8,7 @@ import settings from "@/settings";
 export const conditions = [
   { name: "Standard score", cursor: false, tint: false, spacing: false, feedback: false },
   { name: "Position tracking", cursor: true, tint: false, spacing: false, feedback: false },
-  { name: "High contrast", cursor: false, tint: true, spacing: false, feedback: false },
+  { name: "Colored background", cursor: false, tint: true, spacing: false, feedback: false },
   { name: "Simplified layout", cursor: false, tint: false, spacing: true, feedback: false },
   { name: "Pitch feedback", cursor: false, tint: false, spacing: false, feedback: true },
 ];

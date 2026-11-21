@@ -4,13 +4,13 @@ A web app that shows sheet music to string players in five conditions, built for
 
 ## Conditions
 
-| #   | Condition       | What the player sees                                                                      |
-| --- | --------------- | ----------------------------------------------------------------------------------------- |
-| 1   | Standard        | The score as printed                                                                      |
-| 2   | Position cursor | A highlight that follows the note being played, driven by the microphone                  |
-| 3   | High contrast   | The same layout on a page tinted a light color, like colored paper                        |
-| 4   | Simplified      | Wider spacing between notes, adjustable for each player, and further between lines        |
-| 5   | Pitch feedback  | Notes played more than 25 cents out of tune turn red, without the position cursor         |
+| #   | Condition          | What the player sees                                                               |
+| --- | ------------------ | ---------------------------------------------------------------------------------- |
+| 1   | Standard           | The score as printed                                                               |
+| 2   | Position cursor    | A highlight that follows the note being played, driven by the microphone           |
+| 3   | Colored background | The same layout on a page tinted a light color, like colored paper                 |
+| 4   | Simplified         | Wider spacing between notes, adjustable for each player, and further between lines |
+| 5   | Pitch feedback     | Notes played more than 25 cents out of tune turn red, without the position cursor  |
 
 Scores are MusicXML files. The app does not grade performances; the conductor scores them with a rubric.
 
@@ -20,7 +20,7 @@ The prototype is built in stages, riskiest first:
 
 1. **Pitch** (done): microphone or recording → pitch, measured against annotated recordings.
 2. **Score and cursor** (done): the score page renders MusicXML and a cursor follows the player, including when they stop and start again from an earlier measure while practicing. The person running a session can put the cursor back by hand.
-3. **Conditions** (done): all five conditions above. Still to confirm with the research team: the page colors and the name of condition 3, and the pitch tolerance, whose marks have not yet been checked by ear.
+3. **Conditions** (done): all five conditions above. Still to confirm with the research team: the page colors, and the pitch tolerance, whose marks have not yet been checked by ear.
 4. **Recording and devices** (next): record each performance in the app for the conductor's rubric, and check the app on the experiment's devices, iPad Safari in particular.
 
 The first target is single-line string playing: violin, viola, and cello.
