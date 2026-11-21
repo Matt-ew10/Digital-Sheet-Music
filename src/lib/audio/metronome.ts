@@ -41,25 +41,19 @@ export function metronome(beatsPerMinute: number, perMeasure: number) {
   };
 }
 
-// One click, as samples: a short burst of noise, which has no pitch for the detector to read
-// when the microphone hears it. A beep did: it cost the follower 1 to 3 points on the student's
-// takes, the noise nothing (`pnpm evaluate:student`).
+// One click, as samples: a clave-like tone at 3 kHz (higher on the accent) that dies away in a
+// few hundredths of a second. The judge ignores readings more than an octave above the score's
+// highest note, which the excerpts keep below about 2.5 kHz, so the microphone hearing the click
+// does not mark notes wrong; a 2.5 kHz clave still did, and a 1 kHz beep also pulled the follower
+// off (`pnpm evaluate:student`).
 export function click(sampleRate: number, accent: boolean) {
-  const length = Math.round(sampleRate * 0.025);
+  const length = Math.round(sampleRate * 0.06);
   const samples = new Float32Array(length);
   const gain = accent ? 1 : 0.6;
-  let state = 1;
-  let previous = 0;
+  const hz = accent ? 3600 : 3000;
 
   for (let at = 0; at < length; at++) {
-    const decay = Math.exp(-at / (sampleRate * 0.004));
-
-    // White noise from a fixed sequence, high-passed so it sounds like wood, not a hiss.
-    state = (state * 1664525 + 1013904223) % 4294967296;
-    const noise = state / 2147483648 - 1;
-
-    samples[at] = gain * decay * (noise - previous);
-    previous = noise;
+    samples[at] = gain * Math.sin((2 * Math.PI * hz * at) / sampleRate) * Math.exp(-at / (sampleRate * 0.012));
   }
 
   return samples;
