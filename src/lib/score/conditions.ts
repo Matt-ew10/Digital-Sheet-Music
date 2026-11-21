@@ -33,6 +33,8 @@ export function apply(
   rules.VoiceSpacingMultiplierVexflow =
     defaults.VoiceSpacingMultiplierVexflow * factor;
   rules.VoiceSpacingAddendVexflow = defaults.VoiceSpacingAddendVexflow * factor;
+  // Measure numbers in the middle of a line look like the fingerings printed above the notes.
+  rules.RenderMeasureNumbersOnlyAtSystemStart = true;
   rules.MinimumDistanceBetweenSystems =
     defaults.MinimumDistanceBetweenSystems *
     (condition.spacing ? settings.spacing.lines : 1);
