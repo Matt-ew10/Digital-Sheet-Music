@@ -20,7 +20,7 @@ The prototype is built in stages, riskiest first:
 
 1. **Pitch** (done): microphone or recording → pitch, measured against annotated recordings.
 2. **Score and cursor** (done): the score page renders MusicXML and a cursor follows the player, including when they stop and start again from an earlier measure while practicing. The person running a session can put the cursor back by hand.
-3. **Conditions** (done): all five conditions above. Still to confirm with the research team: the page colors, and the pitch tolerance, whose marks have not yet been checked by ear.
+3. **Conditions** (done): all five conditions above. Still to confirm with the research team: the pitch tolerance, whose marks have not yet been checked by ear.
 4. **Recording and devices** (next): record each performance in the app for the conductor's rubric, and check the app on the experiment's devices, iPad Safari in particular.
 
 The first target is single-line string playing: violin, viola, and cello.
@@ -66,6 +66,8 @@ The person running a session:
 ## Scores
 
 `public/scores/` holds the passages the student chose for the experiment, for violin and viola: 15 violin and 10 viola excerpts, from beginner to advanced. They are public-domain works, transcribed as pitches and rhythms only; fingerings, bowings, dynamics, and other markings from the printed editions are left out. The three pieces Shinichi Suzuki composed were replaced with Bach's Minuets No. 1 and No. 3 for violin and Gossec's Gavotte and Brahms's Waltz for viola.
+
+The beginner excerpts also carry fingerings, bow directions, and slurs. To keep them independent of the printed editions, they were written by an agent that never saw those editions, from first-position fingering and common bowing practice (down-bow on strong beats, up-bow pickups, slurs that keep the bow even): no public-domain edition could be checked against our excerpts note for note. They are a starting point for the research team to correct. The intermediate and advanced excerpts are pitches and rhythms only.
 
 Repeats are written out once: players may play a passage as many times as they like, so the excerpts leave out the printed repeat signs. The Seitz concertos keep the orchestra's introduction and the Veracini sonata its six opening measures of rest, as printed.
 
