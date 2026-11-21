@@ -20,6 +20,9 @@ import type { Note } from "./follow";
 // - Within one pass over a note, a wrong held sound keeps the note wrong. When the player comes
 //   back to the note later, as in practice, a right verdict clears the mark.
 export function judge(score: Note[], referenceHz: number, options: Options) {
+  const pitches = score.flatMap((note) => note.pitches);
+  const lowest = Math.min(...pitches) - 13;
+  const highest = Math.max(...pitches) + 13;
   const marks = new Set<number>();
   const wrongInPass = new Map<number, number>();
   let tracked = -1;
@@ -61,13 +64,17 @@ export function judge(score: Note[], referenceHz: number, options: Options) {
       return undefined;
     }
 
-    if (hz === undefined) {
+    const reading = hz === undefined ? undefined : 69 + 12 * Math.log2(hz / referenceHz);
+
+    // A reading more than an octave outside the score, such as a metronome click, is not the
+    // player, as for the follower.
+    if (reading === undefined || reading < lowest || reading > highest) {
       silent += step;
       if (!options.metronome || silent >= clickLength) reset();
       return undefined;
     }
 
-    let midi = 69 + 12 * Math.log2(hz / referenceHz);
+    let midi = reading;
 
     // A reading an octave off is the detector's error, not a new sound.
     if (held.length > 0) midi -= 12 * Math.round((midi - median(held)) / 12);
