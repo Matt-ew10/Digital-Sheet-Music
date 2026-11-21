@@ -167,7 +167,7 @@ export default function Score({
     // react-doctor-disable-next-line click-events-have-key-events, no-noninteractive-element-interactions
     <main
       ref={containerRef}
-      className="min-h-0 flex-1 cursor-pointer overflow-auto px-2 pt-2 pb-36"
+      className="min-h-0 flex-1 cursor-pointer overflow-auto p-2"
       style={{ background: page(condition, tint) }}
       title="Click a note to start from its measure, or, while following, to put the cursor there. The arrow keys move one note."
       onClick={onClick}

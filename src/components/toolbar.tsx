@@ -11,9 +11,11 @@ import {
   ChevronRight,
   FileAudio,
   FolderOpen,
+  Metronome,
   Mic,
   Square,
 } from "lucide-react";
+import Stepper from "@/components/stepper";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -176,6 +178,59 @@ export function NoteStepper({
   );
 }
 
+// The tempo the player follows, in the beats they count, and the metronome that keeps it. The
+// tempo is set before following starts; the metronome runs on its own and changes with it, and
+// is `held` on or off while pitch feedback follows, since the judge listens for its clicks.
+export function TempoControl({
+  tempo,
+  beat,
+  locked,
+  ticking,
+  held,
+  onTempo,
+  onMetronome,
+}: {
+  tempo: number;
+  beat: number;
+  locked: boolean;
+  ticking: boolean;
+  held: boolean;
+  onTempo: (tempo: number) => void;
+  onMetronome: () => void;
+}) {
+  const { slowest, fastest } = settings.tempo;
+
+  return (
+    <div className="flex items-center gap-3">
+      <span className="min-w-16 whitespace-nowrap text-right tabular-nums">
+        {beats[beat] ?? "♩"} = {tempo}
+      </span>
+      <Stepper
+        value={tempo}
+        least={slowest}
+        most={fastest}
+        step={1}
+        nudge={4}
+        disabled={locked}
+        label="Tempo"
+        onChange={onTempo}
+      />
+      <Hint label={ticking ? "Stop the metronome" : "Start the metronome"}>
+        <Button
+          variant={ticking ? "default" : "outline"}
+          size="icon-lg"
+          aria-label={ticking ? "Stop the metronome" : "Start the metronome"}
+          aria-pressed={ticking}
+          disabled={held}
+          onClick={onMetronome}
+        >
+          <Metronome />
+        </Button>
+      </Hint>
+    </div>
+  );
+}
+
 export function ConditionPicker({
   value,
   disabled,
@@ -314,3 +369,6 @@ function Hint({
 function caption(score: (typeof scores)[number]) {
   return `${score.title} (${score.composer})`;
 }
+
+// Note symbols for a beat of so many quarter notes.
+const beats: Record<number, string> = { 1: "♩", 1.5: "♩.", 2: "𝅗𝅥" };

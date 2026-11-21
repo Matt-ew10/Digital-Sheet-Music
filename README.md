@@ -49,14 +49,15 @@ Open http://localhost:3000. Browsers allow the microphone only on `localhost` or
 
 The page opens with a short sample. The picker at the top left lists the experiment's excerpts by instrument and level; the folder button next to it opens any other `.musicxml` or `.mxl` file, whose first part is followed.
 
+The bar at the top sets up what the player sees: the score, the condition and its options, and the A4. The bar at the bottom runs the playing: following, the note to start from, the tempo, and the metronome.
+
 **Follow** starts the cursor from one of two sources, analyzed the same way: **Microphone** listens to the player, and **Recording** plays an audio file through the speakers. A recording of a passage is the easiest way to repeat the same test without an instrument.
 
 The person running a session:
 
 - picks one of the experiment's five conditions. The page colors for condition 3, the spacing for the simplified layout, and the pitch tolerance for pitch feedback are in `src/settings.ts`.
-- sets the tempo at the bottom left of the score before following, in the beats the player counts (a half note in cut time). A score starts at its printed tempo. The metronome button next to it clicks at that tempo, with the first beat of each measure louder, until it is pressed again.
-- in condition 3, picks the page color with the control at the bottom right of the score.
-- in the simplified layout, widens or narrows the note spacing for the player with the control at the bottom right of the score. Wider spacing puts fewer measures on a line.
+- sets the tempo before following, in the beats the player counts (a half note in cut time). A score starts at its printed tempo. The metronome button next to it clicks at that tempo, with the first beat of each measure louder, until it is pressed again.
+- in condition 3, picks the page color, and in the simplified layout widens or narrows the note spacing for the player, with the options button next to the condition. Wider spacing puts fewer measures on a line.
 - in pitch feedback, leaves the red marks on the score after stopping, so the player can look them over; following again clears them.
 - picks the A4 the player tuned to (440 or 442 Hz; participants use 442). The choice is remembered on the device.
 - clicks a note before playing to start from its measure, for practicing part of a passage.

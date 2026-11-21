@@ -8,8 +8,9 @@ import {
   NoteStepper,
   ReferencePicker,
   ScorePicker,
+  TempoControl,
 } from "@/components/toolbar";
-import { SpacingControl, TempoControl, TintControl } from "@/components/panels";
+import ConditionOptions from "@/components/options";
 import { useListening } from "@/hooks/use-listening";
 import { useMetronome } from "@/hooks/use-metronome";
 import { useReference } from "@/hooks/use-reference";
@@ -153,9 +154,10 @@ export default function Home() {
     move(first);
   }
 
+  // What the player sees is set up at the top; playing is run from the bottom.
   return (
     <div className="flex h-dvh flex-col">
-      <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b px-4 py-2 text-sm">
+      <header className={bar}>
         <ScorePicker
           chosen={chosen}
           opened={opened}
@@ -164,6 +166,42 @@ export default function Home() {
           onOpen={onOpen}
         />
 
+        <div className="ml-auto flex items-center gap-2">
+          <ConditionPicker
+            value={condition}
+            disabled={listening}
+            onChange={setCondition}
+          />
+          <ConditionOptions
+            condition={conditions[condition]}
+            spacing={spacing}
+            tint={tint}
+            onSpacing={setSpacing}
+            onTint={setTint}
+          />
+          <ReferencePicker
+            hz={referenceHz}
+            disabled={listening}
+            onChange={setReferenceHz}
+          />
+        </div>
+
+        {error && <p className="w-full text-destructive">{error}</p>}
+      </header>
+
+      <Score
+        content={content}
+        condition={conditions[condition]}
+        spacing={spacing}
+        tint={tint}
+        note={shown}
+        marks={conditions[condition].feedback ? session.marks : unmarked}
+        onLoad={onLoad}
+        onPick={onPick}
+        onError={setError}
+      />
+
+      <footer className={`${bar} border-t border-b-0`}>
         <FollowControls
           source={session.source}
           onMicrophone={() => start(microphone, "Microphone")}
@@ -178,36 +216,7 @@ export default function Home() {
           onMove={move}
         />
 
-        <div className="ml-auto flex items-center gap-2">
-          <ConditionPicker
-            value={condition}
-            disabled={listening}
-            onChange={setCondition}
-          />
-          <ReferencePicker
-            hz={referenceHz}
-            disabled={listening}
-            onChange={setReferenceHz}
-          />
-        </div>
-
-        {error && <p className="w-full text-destructive">{error}</p>}
-      </header>
-
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        <Score
-          content={content}
-          condition={conditions[condition]}
-          spacing={spacing}
-          tint={tint}
-          note={shown}
-          marks={conditions[condition].feedback ? session.marks : unmarked}
-          onLoad={onLoad}
-          onPick={onPick}
-          onError={setError}
-        />
-
-        <div className="pointer-events-none absolute inset-x-4 bottom-4 flex flex-wrap items-end justify-between gap-2 *:pointer-events-auto">
+        <div className="ml-auto">
           <TempoControl
             tempo={tempo}
             beat={sheet?.beat.quarters ?? 1}
@@ -217,17 +226,12 @@ export default function Home() {
             onTempo={setTempo}
             onMetronome={metronome.toggle}
           />
-
-          {conditions[condition].spacing && (
-            <SpacingControl value={spacing} onChange={setSpacing} />
-          )}
-          {conditions[condition].tint && (
-            <TintControl value={tint} onChange={setTint} />
-          )}
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
+
+const bar = "flex flex-wrap items-center gap-x-6 gap-y-2 border-b px-4 py-2 text-sm";
 
 const unmarked: ReadonlySet<number> = new Set();
