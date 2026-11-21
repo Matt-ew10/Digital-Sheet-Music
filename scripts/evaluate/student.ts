@@ -6,11 +6,14 @@
 //   had skipped a note, added one, or played a wrong pitch, about once every eight notes.
 // - noise, room, quiet, another player: the recording mixed with steady noise, reverberation,
 //   much less level, or a different take as if someone nearby were practicing.
+// - metronome: the app's metronome clicks, louder than the playing, as from a speaker next to the
+//   microphone.
 // - tuned to 442: the recording raised by 8 cents and followed at A4 = 442 Hz.
 // - restarts: as in practice, the player stops three times partway through a note, rests a
 //   second, and starts again from the beginning of a measure one or two measures back.
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { click } from "@/lib/audio/metronome";
 import type { Note } from "@/lib/score/follow";
 import { takes } from "./label";
 import { evaluate, percent, Score } from "./measure";
@@ -47,6 +50,7 @@ async function main(folder?: string) {
       ["room", room(take.samples, take.sampleRate, index), take.score, take.played, 440],
       ["quiet (-24 dB)", take.samples.map((sample) => sample / 16), take.score, take.played, 440],
       ["another player (10 dB below)", mix(take.samples, other, 10), take.score, take.played, 440],
+      ["metronome (10 dB above)", clicked(take.samples, take.sampleRate, 10), take.score, take.played, 440],
       [
         "tuned to 442",
         resample(take.samples, 2 ** (8 / 1200)),
@@ -210,6 +214,25 @@ function room(samples: Float32Array, sampleRate: number, seed: number) {
   const scale = loudness(samples) / Math.max(loudness(wet), 1e-9);
 
   return samples.map((sample, at) => sample + 0.5 * scale * wet[at]);
+}
+
+// Metronome clicks every half second, an accent every fourth, `above` dB over the recording's
+// level while each click sounds, as from a speaker next to the microphone.
+function clicked(samples: Float32Array, sampleRate: number, above: number) {
+  const sounds = [true, false].map((accent) => click(sampleRate, accent));
+  const level = Math.sqrt(sounds[0].reduce((sum, sample) => sum + sample ** 2, 0) / sounds[0].length);
+  const gain = (loudness(samples) / level) * 10 ** (above / 20);
+  const mixed = samples.slice();
+
+  for (let beat = 0, at = 0; at < mixed.length; beat++, at = Math.round(beat * sampleRate * 0.5)) {
+    const sound = sounds[beat % 4 === 0 ? 0 : 1];
+
+    for (let index = 0; index < sound.length && at + index < mixed.length; index++) {
+      mixed[at + index] += gain * sound[index];
+    }
+  }
+
+  return mixed;
 }
 
 // `other`, looped, at `below` dB under `samples`.

@@ -8,9 +8,10 @@ import {
   NoteStepper,
   ReferencePicker,
   ScorePicker,
-  SpacingControl,
 } from "@/components/toolbar";
+import { SpacingControl, TempoControl, TintControl } from "@/components/panels";
 import { useListening } from "@/hooks/use-listening";
+import { useMetronome } from "@/hooks/use-metronome";
 import { useReference } from "@/hooks/use-reference";
 import { microphone, recording, type listen } from "@/lib/audio/listen";
 import { conditions } from "@/lib/score/conditions";
@@ -27,10 +28,13 @@ export default function Home() {
   const [sheet, setSheet] = useState<Sheet>();
   const [condition, setCondition] = useState(1);
   const [spacing, setSpacing] = useState(settings.spacing.notes);
+  const [tint, setTint] = useState(settings.tint.colors[0].value);
+  const [tempo, setTempo] = useState(100);
   const [from, setFrom] = useState(0);
   const [error, setError] = useState<string>();
   const [referenceHz, setReferenceHz] = useReference();
   const session = useListening();
+  const metronome = useMetronome(tempo, sheet?.beat.perMeasure ?? 4);
 
   // The cursor waits on the note playing starts from until the player gets there.
   const shown = Math.max(session.position, from);
@@ -76,13 +80,19 @@ export default function Home() {
 
   function show(score: string | Blob) {
     session.reset();
+    metronome.stop();
     setError(undefined);
     setContent(score);
   }
 
+  // A score starts at its printed tempo, in the beats a player counts.
   function onLoad(sheet: Sheet) {
+    const { slowest, fastest } = settings.tempo;
+    const printed = Math.round(sheet.tempo / sheet.beat.quarters);
+
     setSheet(sheet);
     setFrom(0);
+    setTempo(Math.min(Math.max(printed, slowest), fastest));
   }
 
   function onOpen(file: File) {
@@ -100,12 +110,15 @@ export default function Home() {
     const restarts = sheet.places.flatMap((place, index) =>
       index === 0 || place.measure !== sheet.places[index - 1].measure ? [index] : [],
     );
-    const follow = follower(sheet.notes, referenceHz, restarts);
+    // Notes last as long as the chosen tempo makes them.
+    const scale = sheet.tempo / (tempo * sheet.beat.quarters);
+    const notes = sheet.notes.map((note) => ({ ...note, seconds: note.seconds * scale }));
+    const follow = follower(notes, referenceHz, restarts);
 
     follow.wait(from);
 
     const judgement = conditions[condition].feedback
-      ? judge(sheet.notes, referenceHz, settings.feedback)
+      ? judge(notes, referenceHz, { ...settings.feedback, metronome: metronome.ticking })
       : undefined;
 
     try {
@@ -186,6 +199,7 @@ export default function Home() {
           content={content}
           condition={conditions[condition]}
           spacing={spacing}
+          tint={tint}
           note={shown}
           marks={conditions[condition].feedback ? session.marks : unmarked}
           onLoad={onLoad}
@@ -193,9 +207,24 @@ export default function Home() {
           onError={setError}
         />
 
-        {conditions[condition].spacing && (
-          <SpacingControl value={spacing} onChange={setSpacing} />
-        )}
+        <div className="pointer-events-none absolute inset-x-4 bottom-4 flex flex-wrap items-end justify-between gap-2 *:pointer-events-auto">
+          <TempoControl
+            tempo={tempo}
+            beat={sheet?.beat.quarters ?? 1}
+            locked={listening}
+            ticking={metronome.ticking}
+            held={listening && conditions[condition].feedback}
+            onTempo={setTempo}
+            onMetronome={metronome.toggle}
+          />
+
+          {conditions[condition].spacing && (
+            <SpacingControl value={spacing} onChange={setSpacing} />
+          )}
+          {conditions[condition].tint && (
+            <TintControl value={tint} onChange={setTint} />
+          )}
+        </div>
       </div>
     </div>
   );

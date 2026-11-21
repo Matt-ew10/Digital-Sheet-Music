@@ -112,7 +112,7 @@ async function main(folder?: string) {
     }
 
     rows.push({
-      setting: `right within ${options.right}, wrong beyond ${options.wrong} cents`,
+      setting: `right within ${options.right}, wrong beyond ${options.wrong} cents${options.metronome ? ", metronome" : ""}`,
       judged: percent(totals.judged, totals.notes),
       "marked as recorded": percent(totals.marked, totals.notes),
       "false marks": percent(totals.falseMarks, totals.notes),
@@ -257,9 +257,11 @@ function random(seed: number) {
 // The research team's tolerance: a note within it is in tune.
 const tolerance = app.feedback.right;
 const shifts = [30, 50, 100];
-// The app's setting first, then stricter tolerances, with and without unjudged notes between.
+// The app's setting first, as when the metronome is off and on, then stricter tolerances, with
+// and without unjudged notes between.
 const settings: Options[] = [
   app.feedback,
+  { ...app.feedback, metronome: true },
   { ...app.feedback, right: 15, wrong: 25 },
   { ...app.feedback, right: 15, wrong: 15 },
   { ...app.feedback, right: 12, wrong: 18 },

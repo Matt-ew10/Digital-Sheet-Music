@@ -6,40 +6,41 @@ import settings from "@/settings";
 
 // The ways the experiment shows a score (Table 1 of the research plan).
 export const conditions = [
-  { name: "Standard score", cursor: false, contrast: false, spacing: false, feedback: false },
-  { name: "Position tracking", cursor: true, contrast: false, spacing: false, feedback: false },
-  { name: "High contrast", cursor: false, contrast: true, spacing: false, feedback: false },
-  { name: "Simplified layout", cursor: false, contrast: false, spacing: true, feedback: false },
-  { name: "Pitch feedback", cursor: false, contrast: false, spacing: false, feedback: true },
+  { name: "Standard score", cursor: false, tint: false, spacing: false, feedback: false },
+  { name: "Position tracking", cursor: true, tint: false, spacing: false, feedback: false },
+  { name: "High contrast", cursor: false, tint: true, spacing: false, feedback: false },
+  { name: "Simplified layout", cursor: false, tint: false, spacing: true, feedback: false },
+  { name: "Pitch feedback", cursor: false, tint: false, spacing: false, feedback: true },
 ];
 
 // Sets OSMD up to draw `condition`, starting from OSMD's defaults so that nothing carries over
 // from the condition drawn before. Takes effect at the next render. OSMD's classes come in as
-// `Rules` because OSMD can only be loaded in the browser. `notes` is how many times wider notes
-// are spaced in the simplified layout, which the person running the session can adjust.
+// `Rules` because OSMD can only be loaded in the browser. The person running the session chooses
+// how many times wider notes are spaced in the simplified layout (`look.notes`) and the page
+// color in condition 3 (`look.tint`).
 export function apply(
   osmd: OpenSheetMusicDisplay,
   condition: Condition,
   Rules: typeof EngravingRules,
-  notes: number,
+  look: { notes: number; tint: string },
 ) {
   const defaults = new Rules();
   const rules = osmd.EngravingRules;
-  const { contrast, spacing } = settings;
+  const factor = condition.spacing ? look.notes : 1;
 
-  osmd.setOptions({
-    defaultColorMusic: condition.contrast ? contrast.notation : "#000000",
-    pageBackgroundColor: condition.contrast ? contrast.page : "#ffffff",
-  });
-
-  const factor = condition.spacing ? notes : 1;
+  osmd.setOptions({ pageBackgroundColor: page(condition, look.tint) });
 
   rules.VoiceSpacingMultiplierVexflow =
     defaults.VoiceSpacingMultiplierVexflow * factor;
   rules.VoiceSpacingAddendVexflow = defaults.VoiceSpacingAddendVexflow * factor;
   rules.MinimumDistanceBetweenSystems =
     defaults.MinimumDistanceBetweenSystems *
-    (condition.spacing ? spacing.lines : 1);
+    (condition.spacing ? settings.spacing.lines : 1);
+}
+
+// The color of the page behind the score.
+export function page(condition: Condition, tint: string) {
+  return condition.tint ? tint : "#ffffff";
 }
 
 export type Condition = (typeof conditions)[number];

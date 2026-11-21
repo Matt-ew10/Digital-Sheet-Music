@@ -30,9 +30,23 @@ const settings = {
     color: "#dc2626",
   },
 
-  // Condition 3, high contrast: colors of the notation and the page. The research plan asks for
-  // more contrast with the same layout and size; how much more is the research team's call.
-  contrast: { notation: "#ffffff", page: "#000000" },
+  // Condition 3: the page tinted a light color, like colored paper, with the notation black as
+  // printed. The person running the session picks one of `colors`; the first is used until they
+  // do. The colors are a first proposal for the research team to confirm.
+  tint: {
+    colors: [
+      { name: "Yellow", value: "#fff3a8" },
+      { name: "Peach", value: "#ffdcc2" },
+      { name: "Pink", value: "#fbd6e4" },
+      { name: "Blue", value: "#d2e8f8" },
+      { name: "Green", value: "#d8f0cd" },
+      { name: "Lilac", value: "#e6dbf6" },
+    ],
+  },
+
+  // The tempo the person running the session can choose, in beats per minute. A score starts at
+  // its printed tempo.
+  tempo: { slowest: 30, fastest: 240 },
 
   // Condition 4, simplified layout: how many times wider notes are spaced at first and how far
   // the person running the session can widen them, and how many times further apart the lines

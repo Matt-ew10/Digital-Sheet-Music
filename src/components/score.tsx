@@ -5,16 +5,18 @@ import type {
   OpenSheetMusicDisplay,
   VexFlowGraphicalNote,
 } from "opensheetmusicdisplay";
-import { apply, type Condition } from "@/lib/score/conditions";
+import { apply, page, type Condition } from "@/lib/score/conditions";
 import { read, type Sheet } from "@/lib/score/read";
 import settings from "@/settings";
 
 // Draws a MusicXML score for one condition, with notes `spacing` times wider in the simplified
-// layout, keeps its cursor on `note`, and colors the notes in `marks`. Reports the score's notes once it is drawn, and which note a click lands on.
+// layout and the page `tint` in condition 3, keeps its cursor on `note`, and colors the notes in
+// `marks`. Reports the score's notes once it is drawn, and which note a click lands on.
 export default function Score({
   content,
   condition,
   spacing,
+  tint,
   note,
   marks,
   onLoad,
@@ -37,7 +39,7 @@ export default function Score({
     if (content) void onContent(content);
   }, [content]);
 
-  useEffect(() => onCondition(), [condition, spacing]);
+  useEffect(() => onCondition(), [condition, spacing, tint]);
   useEffect(() => onNote(note), [note]);
   // OSMD redraws the page itself when the window is resized, which drops the colors, so they
   // are put back as the cursor moves too.
@@ -68,7 +70,7 @@ export default function Score({
 
     if (!osmd || !library || !osmd.Sheet) return;
 
-    apply(osmd, condition, library.EngravingRules, spacing);
+    apply(osmd, condition, library.EngravingRules, { notes: spacing, tint });
     osmd.render();
     sheetRef.current ??= read(osmd);
     osmd.cursor.reset();
@@ -165,10 +167,8 @@ export default function Score({
     // react-doctor-disable-next-line click-events-have-key-events, no-noninteractive-element-interactions
     <main
       ref={containerRef}
-      className="min-h-0 flex-1 cursor-pointer overflow-auto p-2"
-      style={{
-        background: condition.contrast ? settings.contrast.page : "#ffffff",
-      }}
+      className="min-h-0 flex-1 cursor-pointer overflow-auto px-2 pt-2 pb-36"
+      style={{ background: page(condition, tint) }}
       title="Click a note to start from its measure, or, while following, to put the cursor there. The arrow keys move one note."
       onClick={onClick}
     />
@@ -179,6 +179,7 @@ interface Props {
   content?: string | Blob;
   condition: Condition;
   spacing: number;
+  tint: string;
   note: number;
   marks: ReadonlySet<number>;
   onLoad: (sheet: Sheet) => void;

@@ -8,7 +8,7 @@ A web app that shows sheet music to string players in five conditions, built for
 | --- | --------------- | ----------------------------------------------------------------------------------------- |
 | 1   | Standard        | The score as printed                                                                      |
 | 2   | Position cursor | A highlight that follows the note being played, driven by the microphone                  |
-| 3   | High contrast   | The same layout with stronger colors                                                      |
+| 3   | High contrast   | The same layout on a page tinted a light color, like colored paper                        |
 | 4   | Simplified      | Wider spacing between notes, adjustable for each player, and further between lines        |
 | 5   | Pitch feedback  | Notes played more than 25 cents out of tune turn red, without the position cursor         |
 
@@ -20,7 +20,7 @@ The prototype is built in stages, riskiest first:
 
 1. **Pitch** (done): microphone or recording → pitch, measured against annotated recordings.
 2. **Score and cursor** (done): the score page renders MusicXML and a cursor follows the player, including when they stop and start again from an earlier measure while practicing. The person running a session can put the cursor back by hand.
-3. **Conditions** (done): all five conditions above. Still to confirm with the research team: the high-contrast colors, the simplified spacing, and the pitch tolerance, whose marks have not yet been checked by ear.
+3. **Conditions** (done): all five conditions above. Still to confirm with the research team: the page colors and the name of condition 3, and the pitch tolerance, whose marks have not yet been checked by ear.
 4. **Recording and devices** (next): record each performance in the app for the conductor's rubric, and check the app on the experiment's devices, iPad Safari in particular.
 
 The first target is single-line string playing: violin, viola, and cello.
@@ -53,7 +53,9 @@ The page opens with a short sample. The picker at the top left lists the experim
 
 The person running a session:
 
-- picks one of the experiment's five conditions. Colors for high contrast, spacing for the simplified layout, and the pitch tolerance for pitch feedback are in `src/settings.ts`.
+- picks one of the experiment's five conditions. The page colors for condition 3, the spacing for the simplified layout, and the pitch tolerance for pitch feedback are in `src/settings.ts`.
+- sets the tempo at the bottom left of the score before following, in the beats the player counts (a half note in cut time). A score starts at its printed tempo. The metronome button next to it clicks at that tempo, with the first beat of each measure louder, until it is pressed again.
+- in condition 3, picks the page color with the control at the bottom right of the score.
 - in the simplified layout, widens or narrows the note spacing for the player with the control at the bottom right of the score. Wider spacing puts fewer measures on a line.
 - in pitch feedback, leaves the red marks on the score after stopping, so the player can look them over; following again clears them.
 - picks the A4 the player tuned to (440 or 442 Hz; participants use 442). The choice is remembered on the device.

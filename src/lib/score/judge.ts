@@ -6,6 +6,9 @@ import type { Note } from "./follow";
 //
 // - A verdict needs a held sound: readings, after the bow's attack, that stay within a quarter
 //   tone of each other for `options.hold` seconds. Silence or a larger jump starts a new sound.
+//   With `options.metronome`, a click can cover the instrument for a moment, reading as silence
+//   or a stray pitch or two, so only silence of `clickLength` or more counts, and a jump must
+//   last three readings. Both rules cost wrong notes caught, so they apply only then.
 //   The verdict is the median distance from the written pitch, octaves folded away, so vibrato
 //   and a detector octave error are not mistakes.
 // - Beyond `options.wrong` cents the note is wrong; within `options.right` it is right. Between
@@ -26,6 +29,7 @@ export function judge(score: Note[], referenceHz: number, options: Options) {
   let held: number[] = [];
   let sounding = 0;
   let silent = 0;
+  let strays: number[] = [];
   let judged = false;
   let last: number | undefined;
   let entered = 0;
@@ -52,9 +56,14 @@ export function judge(score: Note[], referenceHz: number, options: Options) {
       tracked = position;
     }
 
-    if (note < 0 || hz === undefined) {
-      silent += step;
+    if (note < 0) {
       reset();
+      return undefined;
+    }
+
+    if (hz === undefined) {
+      silent += step;
+      if (!options.metronome || silent >= clickLength) reset();
       return undefined;
     }
 
@@ -63,15 +72,26 @@ export function judge(score: Note[], referenceHz: number, options: Options) {
     // A reading an octave off is the detector's error, not a new sound.
     if (held.length > 0) midi -= 12 * Math.round((midi - median(held)) / 12);
 
-    // A jump of more than a quarter tone starts a new sound, with its own attack.
-    const jumped = held.length > 0 && Math.abs(midi - median(held)) > 0.5;
+    // A jump of more than a quarter tone starts a new sound, with its own attack, once it lasts.
+    // The new sound began with its first stray reading, so its time counts from there.
+    let jumped = false;
+    let lead = 0;
 
-    if (jumped) reset();
+    if (held.length > 0 && Math.abs(midi - median(held)) > 0.5) {
+      strays.push(midi);
+      if (strays.length < (options.metronome ? 3 : 1)) return undefined;
+
+      jumped = true;
+      lead = (strays.length - 1) * step;
+      reset();
+    }
+
+    strays = [];
 
     if (
       sounding === 0 &&
       stroked &&
-      (jumped || silent >= 2 / 60) &&
+      (jumped || silent >= (options.metronome ? clickLength : 2 / 60)) &&
       time - entered >= options.strokes * score[note].seconds &&
       note + 1 < score.length
     ) {
@@ -82,7 +102,7 @@ export function judge(score: Note[], referenceHz: number, options: Options) {
     }
 
     silent = 0;
-    sounding += step;
+    sounding += step + lead;
     if (sounding < options.attack) return undefined;
 
     held.push(midi);
@@ -111,6 +131,7 @@ export function judge(score: Note[], referenceHz: number, options: Options) {
 
   function reset() {
     held = [];
+    strays = [];
     sounding = 0;
     judged = false;
   }
@@ -123,6 +144,9 @@ function cents(pitches: number[], midi: number) {
     .toSorted((a, b) => Math.abs(a) - Math.abs(b))[0];
 }
 
+// How long a metronome click can cover the instrument: the click itself and a reading window.
+const clickLength = 0.08;
+
 function median(values: number[]) {
   return values.toSorted((a, b) => a - b)[Math.floor(values.length / 2)];
 }
@@ -134,6 +158,8 @@ export interface Options {
   // Seconds skipped at the start of each sound, and how long it must then be held.
   attack: number;
   hold: number;
+  // Whether metronome clicks may reach the microphone.
+  metronome?: boolean;
   // The share of a note's written length after which a new stroke is taken as the next note.
   strokes: number;
 }

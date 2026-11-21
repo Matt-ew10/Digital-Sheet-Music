@@ -6,7 +6,9 @@ import type { Note } from "./follow";
 
 // The notes of the first part in the order the cursor visits them, and where each is on the
 // page: the cursor step where it starts, its written position in whole notes, its measure, and
-// the printed notes that sound there.
+// the printed notes that sound there. Also the written tempo at the start, in quarter notes per
+// minute, and the beat a player counts: a quarter in 3/4, a half in cut time, a dotted quarter in
+// 6/8.
 // Rests, grace notes, and tied continuations start nothing, so their time goes to the note
 // before them. Leaves the cursor at the start.
 export function read(osmd: OpenSheetMusicDisplay) {
@@ -16,6 +18,9 @@ export function read(osmd: OpenSheetMusicDisplay) {
   let at = 0;
   let whole = 0;
   let bpm = cursor.Iterator.CurrentBpm;
+  const tempo = bpm;
+  const meter = osmd.Sheet.SourceMeasures[0].ActiveTimeSignature;
+  const compound = meter.Denominator === 8 && meter.Numerator % 3 === 0 && meter.Numerator > 3;
 
   cursor.reset();
 
@@ -67,6 +72,11 @@ export function read(osmd: OpenSheetMusicDisplay) {
       measure,
       printed,
     })),
+    tempo,
+    beat: {
+      quarters: (4 / meter.Denominator) * (compound ? 3 : 1),
+      perMeasure: compound ? meter.Numerator / 3 : meter.Numerator,
+    },
   };
 }
 
