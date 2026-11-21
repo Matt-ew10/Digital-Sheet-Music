@@ -23,7 +23,7 @@ export default function Stepper({
     <div className="flex items-center gap-2">
       <Button
         variant="outline"
-        size="icon-lg"
+        size="icon"
         aria-label={`Less ${label.toLowerCase()}`}
         disabled={disabled || value <= least}
         onClick={() => move(-nudge)}
@@ -42,7 +42,7 @@ export default function Stepper({
       />
       <Button
         variant="outline"
-        size="icon-lg"
+        size="icon"
         aria-label={`More ${label.toLowerCase()}`}
         disabled={disabled || value >= most}
         onClick={() => move(nudge)}

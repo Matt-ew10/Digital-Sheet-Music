@@ -44,7 +44,7 @@ export default function ConditionOptions({
             aria-checked={color.value === tint}
             aria-label={color.name}
             title={color.name}
-            className="size-8 rounded-full border border-foreground/20 ring-offset-2 ring-offset-background aria-checked:ring-2 aria-checked:ring-foreground"
+            className="size-6 rounded-sm border border-foreground/20 ring-offset-2 ring-offset-background aria-checked:ring-2 aria-checked:ring-foreground"
             style={{ background: color.value }}
             onClick={() => onTint(color.value)}
           />

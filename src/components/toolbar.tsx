@@ -218,7 +218,7 @@ export function TempoControl({
       <Hint label={ticking ? "Stop the metronome" : "Start the metronome"}>
         <Button
           variant={ticking ? "default" : "outline"}
-          size="icon-lg"
+          size="icon"
           aria-label={ticking ? "Stop the metronome" : "Start the metronome"}
           aria-pressed={ticking}
           disabled={held}
